@@ -1,0 +1,25 @@
+{
+  "name": "bagley-bot",
+  "version": "0.1.0",
+  "description": "WhatsApp group management bot Bagley built with Baileys and OpenAI.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node ./src/index.js"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@vitalets/google-translate-api": "^9.2.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "cheerio": "^1.1.2",
+    "fast-xml-parser": "^5.3.3",
+    "fs-extra": "^11.2.0",
+    "html-entities": "^2.6.0",
+    "openai": "^4.52.0",
+    "pino": "^8.15.0",
+    "qrcode-terminal": "^0.12.0",
+    "wa-sticker-formatter": "^4.4.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

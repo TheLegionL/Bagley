@@ -1,0 +1,7 @@
+node_modules
+auth_info_multi*
+config/owner.json
+config/openai.json
+session.data.json
+*.log
+.DS_Store

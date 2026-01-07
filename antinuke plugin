@@ -1,0 +1,221 @@
+=== src/antinuke-service.js ===
+```js
+const path = require('node:path');
+const fs = require('fs-extra');
+const { normalizeJid } = require('./permissions');
+
+const ANTINUKE_FILE = path.join(__dirname, '..', 'config', 'antinuke.json');
+
+function createAntinukeService({ logger } = {}) {
+  let cache = null;
+
+  const ensureLoaded = async () => {
+    if (cache) {
+      return cache;
+    }
+
+    try {
+      if (!(await fs.pathExists(ANTINUKE_FILE))) {
+        cache = {};
+        return cache;
+      }
+
+      const data = await fs.readJson(ANTINUKE_FILE);
+      cache = data && typeof data === 'object' ? data : {};
+      return cache;
+    } catch (error) {
+      logger?.warn({ err: error }, 'Impossibile caricare antinuke.json, inizializzo a vuoto');
+      cache = {};
+      return cache;
+    }
+  };
+
+  const save = async (data) => {
+    cache = data;
+    try {
+      await fs.outputJson(ANTINUKE_FILE, cache, { spaces: 2 });
+    } catch (error) {
+      logger?.error({ err: error }, 'Impossibile salvare antinuke.json');
+    }
+  };
+
+  const normalizeGroup = (jid) => {
+    const normalized = normalizeJid(jid);
+    return normalized && normalized.endsWith('@g.us') ? normalized : null;
+  };
+
+  return {
+    async isEnabled(groupJid) {
+      const normalized = normalizeGroup(groupJid);
+      if (!normalized) {
+        return false;
+      }
+      const data = await ensureLoaded();
+      return Boolean(data[normalized]);
+    },
+    async setState(groupJid, enabled) {
+      const normalized = normalizeGroup(groupJid);
+      if (!normalized) {
+        throw new Error('JID gruppo non valido per l\'antinuke.');
+      }
+      const data = await ensureLoaded();
+      if (enabled) {
+        data[normalized] = true;
+      } else {
+        delete data[normalized];
+      }
+      await save(data);
+      return enabled;
+    }
+  };
+}
+
+module.exports = {
+  createAntinukeService,
+  ANTINUKE_FILE
+};
+```
+
+=== src/index.js (service wiring) ===
+```js
+const { createAntinukeService } = require('./antinuke-service');
+…
+async function startBot(services) {
+  const {
+    permissionService,
+    aiService,
+    antilinkService,
+    antispamService,
+    antinukeService,
+    muteService,
+    lastfmService,
+    awareOnlineService
+  } = services;
+…
+  const commandRegistry = createCommandRegistry({
+    permissionService,
+    sock,
+    logger,
+    contactCache,
+    botLid: state?.creds?.me?.lid,
+    aiService,
+    antilinkService,
+    antispamService,
+    antinukeService,
+    muteService,
+    callManager: callTracker,
+    downloadMediaMessage,
+    lastfmService,
+    awareOnlineService
+  });
+…
+(async () => {
+  try {
+    const permissionService = await createPermissionService();
+    …
+    const antinukeService = createAntinukeService({ logger });
+    …
+    await startBot({
+      permissionService,
+      aiService,
+      antilinkService,
+      antispamService,
+      antinukeService,
+      muteService,
+      lastfmService,
+      awareOnlineService
+    });
+  } catch (error) {
+    …
+  }
+})();
+```
+
+=== src/commands.js (command + enforcement) ===
+```js
+const RADLINK_CACHE_PATH = path.join(__dirname, '..', 'config', 'radlink-cache.json');
+…
+function createCommandRegistry(dependencies) {
+  const {
+    permissionService,
+    sock,
+    logger,
+    contactCache,
+    botLid,
+    aiService,
+    antilinkService,
+    antispamService,
+    antinukeService,
+    muteService,
+    callManager,
+    downloadMediaMessage,
+    lastfmService,
+    awareOnlineService
+  } = dependencies;
+…
+    {
+      name: 'antinuke',
+      usage: 'antinuke <on|off>',
+      minLevel: PermissionLevel.WHITELIST,
+      description: 'Protegge il gruppo da comandi distruttivi come steal/abuse.',
+      handler: async (context) => {
+        if (!context.remoteJid?.endsWith('@g.us')) {
+          return { text: 'Il comando antinuke funziona solo nei gruppi.' };
+        }
+
+        if (!antinukeService) {
+          return { text: 'Il servizio antinuke non è disponibile.' };
+        }
+
+        const mode = context.parsed.args[0]?.toLowerCase();
+        if (mode !== 'on' && mode !== 'off') {
+          return { text: 'Specificami se devo attivare o disattivare: usa on oppure off.' };
+        }
+
+        const enabled = mode === 'on';
+        await antinukeService.setState(context.remoteJid, enabled);
+        return {
+          text: enabled
+            ? '☢️ Antinuke attivato. Nessuno fa il figo.'
+            : '☢️ Antinuke disattivato. Diventerò possibilmente Oppenheimer.'
+        };
+      }
+    },
+…
+    {
+      name: 'steal',
+      usage: 'steal',
+      minLevel: PermissionLevel.WHITELIST,
+      description: 'Prende il controllo del gruppo in tre fasi (demote, promote whitelist+owner, rename & lock).',
+      handler: async (context) => {
+        if (!context.remoteJid?.endsWith('@g.us')) {
+          return { text: 'Il comando steal funziona solo nei gruppi.' };
+        }
+
+        if (antinukeService && (await antinukeService.isEnabled(context.remoteJid))) {
+          return { text: 'Questo gruppo è protetto dall\'antinuke. Steal non disponibile.' };
+        }
+
+        …
+      }
+    },
+    {
+      name: 'abuse',
+      usage: 'abuse',
+      minLevel: PermissionLevel.WHITELIST,
+      description: 'Rimuove admin, ribattezza il gruppo e lo svuota prima di abbandonarlo.',
+      handler: async (context) => {
+        if (!context.remoteJid?.endsWith('@g.us')) {
+          return { text: 'Il comando abuse funziona solo nei gruppi.' };
+        }
+
+        if (antinukeService && (await antinukeService.isEnabled(context.remoteJid))) {
+          return { text: 'Questo gruppo è protetto dall\'antinuke. Abuse non è consentito.' };
+        }
+
+        …
+      }
+    },
+```
+
+Questo file raccoglie i frammenti necessari a riutilizzare il plug-in antinuke (servizio di storage, inizializzazione e logica dei comandi/protezioni).

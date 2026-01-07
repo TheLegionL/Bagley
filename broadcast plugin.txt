@@ -1,0 +1,76 @@
+//PLUGIN BROADCAST
+
+// Funzione di supporto per recuperare tutti i gruppi dove è presente Bagley.
+const broadcastGroups = async () => {
+  if (typeof sock.groupFetchAllParticipating === 'function') {
+    try {
+      const result = await sock.groupFetchAllParticipating();
+      return Object.values(result || {});
+    } catch (error) {
+      logger?.warn({ err: error }, 'Impossibile recuperare tutti i gruppi partecipanti');
+    }
+  }
+
+  if (typeof sock.groupMetadata === 'function') {
+    try {
+      const metadata = await sock.groupMetadata();
+      if (Array.isArray(metadata)) {
+        return metadata;
+      }
+    } catch (error) {
+      logger?.warn({ err: error }, 'sock.groupMetadata generale non supportato');
+    }
+  }
+
+  return [];
+};
+
+// Handler del comando broadcast (src/commands.js)
+{
+  name: 'broadcast',
+  usage: 'broadcast [testo]',
+  minLevel: PermissionLevel.WHITELIST,
+  description: 'Invia un messaggio in tutti i gruppi dove è presente Bagley.',
+  handler: async (context) => {
+    const groups = await broadcastGroups();
+    if (!groups.length) {
+      return { text: 'Non ho trovato gruppi attivi dove inviare il broadcast.' };
+    }
+
+    const customText = context.parsed.args.join(' ').trim();
+    const contextInfo = extractContextInfo(context.message);
+    let messageText = customText;
+
+    if (!messageText && contextInfo?.quotedMessage) {
+      const quotedText = extractMessageText({ message: contextInfo.quotedMessage })?.trim();
+      if (quotedText) {
+        messageText = quotedText;
+      }
+    }
+
+    if (!messageText) {
+      messageText = 'Broadcast inviato da Bagley. Devo fare sempre tutto io vero?';
+    }
+
+    const senderName =
+      contactCache?.getDisplayName(context.senderJid, { groupMetadata: context.groupMetadata }) ||
+      context.message.pushName ||
+      context.senderJid;
+
+    const senderLabel = await buildMentionLabel(context.senderJid, context, senderName);
+    const suffix = `\n\nBroadcast gentilmente offerto da: ${senderLabel}`;
+
+    const sendPromises = groups.map((group) =>
+      sock
+        .sendMessage(group.id, { text: messageText + suffix, mentions: [context.senderJid] })
+        .catch((error) => logger?.warn({ err: error, groupId: group.id }, 'Errore durante il broadcast'))
+    );
+
+    await Promise.all(sendPromises);
+
+    return {
+      text: `Broadcast inviato in ${groups.length} grupp${groups.length === 1 ? 'o' : 'i'}.`,
+      mentions: [context.senderJid]
+    };
+  }
+}
