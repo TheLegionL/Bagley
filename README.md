@@ -76,3 +76,74 @@ Per `!whitelist remove` puoi anche indicare solo l'indice mostrato da `!whitelis
 - Assicurarsi che Bagley sia admin nel gruppo per poter eseguire operazioni come `!ban`.
 - Aggiornare `config/whitelist.json` con prudenza: il file è caricato in memoria e serve il comando `!reload whitelist` per rilevare modifiche manuali.
 - In caso di problemi con l'autenticazione, eliminare la cartella `auth_info_multi` e ripetere la scansione del QR code.
+
+## BagleyBank (valuta ฿)
+
+Il sistema economico interno usa la valuta `฿` e salva i dati in `config/bank.json`. Tutte le attività del bot possono accreditare o scalare saldi personali.
+
+Comandi principali (grado minimo 0 salvo diversa indicazione):
+
+- `!account crea|elimina` crea o chiude il tuo conto (con bonus iniziale di ฿5000).
+- `!saldo` mostra il saldo, eventuali prestiti in corso e la prossima rata automatica.
+- `!dona @utente importo` trasferisce fondi a un altro conto.
+- `!aumento <utente|me> importo` (grado 1) ricarica un conto.
+- `!prestito importo` richiede un prestito a interesse variabile e lo accredita subito.
+- `!paga importo` versa manualmente una rata per estinguere più velocemente il prestito.
+
+I prestiti sono ripagati in 10 rate giornaliere automatiche; il bot prova a prelevare ogni giorno alle 00:00.
+
+## Minigioco !fut con dati ESPN
+
+Il comando `!fut` apre il centro scommesse Bagley FUT. Tutte le vincite vengono accreditate su BagleyBank.
+
+Comandi disponibili:
+
+- `!camp <numero>` seleziona uno dei campionati (Premier League, La Liga, Serie A, Bundesliga, Ligue 1).
+- `!match` genera/mostra il match virtuale corrente del gruppo.
+- `!bet <giocata> <importo>` piazza una puntata (A/B/X, over/under gol, cartellini, tiri, corner, GG/NG, marcatore, risultato esatto, ecc.).
+- `!history` visualizza gli ultimi match simulati nel gruppo.
+- `!leaderboard [global]` mostra la classifica dei migliori scommettitori del gruppo o globale.
+
+Il bot crea quote dinamiche basate su “forza” squadra + un fattore random, simula il risultato allo scadere del countdown e accredita automaticamente i vincitori (al netto di una piccola fee di casa).
+Ogni gara dura circa due minuti reali: dopo il kick-off riceverai aggiornamenti live (gol, occasioni, cartellini, risse o invasioni di campo, supplementari) fino al triplice fischio virtuale.
+
+### Aggiornamento settimanale dei dati ESPN
+
+1. Assicurati di avere Python installato e il pacchetto `requests` (`pip install requests`).
+2. Esegui `npm run fut:update` per lanciare `scripts/update_fut_data.py`. Lo script scarica squadre, giocatori e statistiche dai servizi ESPN (tramite [cwendt94/espn-api](https://github.com/cwendt94/espn-api)) per i cinque campionati configurati.
+3. Il file `config/fut-leagues.json` verrà sovrascritto con i dati aggiornati. Programma il comando una volta a settimana (cron, Task Scheduler o Termux) per mantenere fresche le rose.
+
+Lo script usa tutte le API disponibili del progetto ESPN-API esponendo roster completi, in modo da poter aggiungere in futuro nuove attività che sfruttino i dati ufficiali.
+
+## Avvio su Termux (Android)
+
+Per eseguire Bagley su un dispositivo Android tramite Termux segui questi passi rapidi:
+
+1. Installa Termux e i pacchetti necessari sul dispositivo:
+
+   ```bash
+   pkg update
+   pkg install git nodejs python
+   # Se il progetto usa 'sharp' per immagini
+   pkg install vips
+   ```
+
+2. Clona o trasferisci il repository sul dispositivo e installa le dipendenze:
+
+   ```bash
+   git clone <repo-url> bagley
+   cd bagley
+   npm install --omit=dev
+   ```
+
+3. Prepara la configurazione come indicato nella sezione "Installazione" (copiare `config/*.example.json` in `config/` e compilare i campi).
+
+4. Avvia Bagley con lo script helper (gestisce anche il wake-lock se disponibile):
+
+   ```bash
+   npm run start:termux
+   ```
+
+Note utili:
+- Se l'installazione di `sharp` fallisce, prova a installare `vips` (`pkg install vips`) prima di rieseguire `npm install`.
+- Per mantenere il bot in background considera l'uso di `tmux`, `termux-job-scheduler` o un gestore di sessioni simile.

@@ -4,7 +4,9 @@
   "description": "WhatsApp group management bot Bagley built with Baileys and OpenAI.",
   "main": "src/index.js",
   "scripts": {
-    "start": "node ./src/index.js"
+    "start": "node ./src/index.js",
+    "start:termux": "bash ./scripts/start-termux.sh",
+    "fut:update": "python ./scripts/update_fut_data.py"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
@@ -14,10 +16,12 @@
     "fast-xml-parser": "^5.3.3",
     "fs-extra": "^11.2.0",
     "html-entities": "^2.6.0",
+    "jimp": "^0.22.9",
     "openai": "^4.52.0",
     "pino": "^8.15.0",
     "qrcode-terminal": "^0.12.0",
-    "wa-sticker-formatter": "^4.4.4"
+    "sharp": "^0.33.2",
+    "wa-sticker-formatter": "^1.6.0"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -31,14 +31,22 @@ function loadOwnerJid() {
     );
   }
 
-  const { ownerJid } = fs.readJsonSync(OWNER_FILE);
+  const data = fs.readJsonSync(OWNER_FILE);
+  
+  // Supporto per nuovo formato con array di ownerJids
+  if (Array.isArray(data.ownerJids) && data.ownerJids.length > 0) {
+    return data.ownerJids;
+  }
+  
+  // Backward compatibility con vecchio formato singolo ownerJid
+  const { ownerJid } = data;
   const normalized = typeof ownerJid === 'string' ? ownerJid.trim() : '';
 
   if (!normalized) {
     throw new Error('The ownerJid field inside config/owner.json is empty. Set it to the WhatsApp JID of the bot owner.');
   }
 
-  return normalized;
+  return [normalized];
 }
 
 function loadOpenAIKey() {

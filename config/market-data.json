@@ -1,0 +1,911 @@
+{
+  "1": {
+    "name": "Auto",
+    "subcategories": {
+      "1": {
+        "name": "Fiat",
+        "items": {
+          "500": {
+            "name": "Fiat 500",
+            "basePrice": 15000,
+            "volatility": "low",
+            "description": "Iconica city car italiana"
+          },
+          "panda": {
+            "name": "Fiat Panda",
+            "basePrice": 12000,
+            "volatility": "low",
+            "description": "Utilitaria affidabile"
+          },
+          "tipo": {
+            "name": "Fiat Tipo",
+            "basePrice": 18000,
+            "volatility": "medium",
+            "description": "Berlina compatta"
+          },
+          "500x": {
+            "name": "Fiat 500X",
+            "basePrice": 22000,
+            "volatility": "medium",
+            "description": "SUV compatto"
+          },
+          "500e": {
+            "name": "Fiat 500e",
+            "basePrice": 35000,
+            "volatility": "high",
+            "description": "Versione elettrica della 500"
+          }
+        }
+      },
+      "2": {
+        "name": "BMW",
+        "items": {
+          "118i": {
+            "name": "BMW 118i",
+            "basePrice": 28000,
+            "volatility": "medium",
+            "description": "Compatta premium"
+          },
+          "320i": {
+            "name": "BMW 320i",
+            "basePrice": 35000,
+            "volatility": "medium",
+            "description": "Berlina media"
+          },
+          "x3": {
+            "name": "BMW X3",
+            "basePrice": 45000,
+            "volatility": "high",
+            "description": "SUV di lusso"
+          },
+          "330e": {
+            "name": "BMW 330e",
+            "basePrice": 42000,
+            "volatility": "high",
+            "description": "Ibrida plug-in"
+          },
+          "m3": {
+            "name": "BMW M3",
+            "basePrice": 75000,
+            "volatility": "high",
+            "description": "Sportiva ad alte prestazioni"
+          }
+        }
+      },
+      "3": {
+        "name": "Mercedes",
+        "items": {
+          "a180": {
+            "name": "Mercedes A180",
+            "basePrice": 32000,
+            "volatility": "medium",
+            "description": "Compatta di lusso"
+          },
+          "c200": {
+            "name": "Mercedes C200",
+            "basePrice": 42000,
+            "volatility": "medium",
+            "description": "Berlina executive"
+          },
+          "gle": {
+            "name": "Mercedes GLE",
+            "basePrice": 65000,
+            "volatility": "high",
+            "description": "SUV di lusso"
+          },
+          "e300e": {
+            "name": "Mercedes E300e",
+            "basePrice": 55000,
+            "volatility": "high",
+            "description": "Ibrida di lusso"
+          },
+          "s500": {
+            "name": "Mercedes S500",
+            "basePrice": 95000,
+            "volatility": "high",
+            "description": "Limousine di lusso"
+          }
+        }
+      },
+      "4": {
+        "name": "Audi",
+        "items": {
+          "a3": {
+            "name": "Audi A3",
+            "basePrice": 29000,
+            "volatility": "medium",
+            "description": "Compatta premium"
+          },
+          "a4": {
+            "name": "Audi A4",
+            "basePrice": 38000,
+            "volatility": "medium",
+            "description": "Berlina media"
+          },
+          "q5": {
+            "name": "Audi Q5",
+            "basePrice": 48000,
+            "volatility": "high",
+            "description": "SUV premium"
+          },
+          "a6": {
+            "name": "Audi A6",
+            "basePrice": 52000,
+            "volatility": "high",
+            "description": "Berlina executive"
+          },
+          "rs6": {
+            "name": "Audi RS6",
+            "basePrice": 110000,
+            "volatility": "high",
+            "description": "Station wagon sportiva"
+          }
+        }
+      },
+      "5": {
+        "name": "Volkswagen",
+        "items": {
+          "polo": {
+            "name": "Volkswagen Polo",
+            "basePrice": 16000,
+            "volatility": "low",
+            "description": "Utilitaria tedesca"
+          },
+          "golf": {
+            "name": "Volkswagen Golf",
+            "basePrice": 22000,
+            "volatility": "medium",
+            "description": "Compatta versatile"
+          },
+          "passat": {
+            "name": "Volkswagen Passat",
+            "basePrice": 28000,
+            "volatility": "medium",
+            "description": "Berlina familiare"
+          },
+          "tiguan": {
+            "name": "Volkswagen Tiguan",
+            "basePrice": 32000,
+            "volatility": "medium",
+            "description": "SUV compatto"
+          },
+          "arteon": {
+            "name": "Volkswagen Arteon",
+            "basePrice": 38000,
+            "volatility": "high",
+            "description": "Coupé a 4 porte"
+          }
+        }
+      },
+      "6": {
+        "name": "Toyota",
+        "items": {
+          "yaris": {
+            "name": "Toyota Yaris",
+            "basePrice": 14000,
+            "volatility": "low",
+            "description": "City car affidabile"
+          },
+          "corolla": {
+            "name": "Toyota Corolla",
+            "basePrice": 20000,
+            "volatility": "medium",
+            "description": "Berlina compatta"
+          },
+          "camry": {
+            "name": "Toyota Camry",
+            "basePrice": 28000,
+            "volatility": "medium",
+            "description": "Berlina media"
+          },
+          "rav4": {
+            "name": "Toyota RAV4",
+            "basePrice": 32000,
+            "volatility": "medium",
+            "description": "SUV compatto"
+          },
+          "prius": {
+            "name": "Toyota Prius",
+            "basePrice": 26000,
+            "volatility": "high",
+            "description": "Ibrida rivoluzionaria"
+          }
+        }
+      },
+      "7": {
+        "name": "Honda",
+        "items": {
+          "jazz": {
+            "name": "Honda Jazz",
+            "basePrice": 15000,
+            "volatility": "low",
+            "description": "Utilitaria giapponese"
+          },
+          "civic": {
+            "name": "Honda Civic",
+            "basePrice": 22000,
+            "volatility": "medium",
+            "description": "Berlina compatta"
+          },
+          "accord": {
+            "name": "Honda Accord",
+            "basePrice": 28000,
+            "volatility": "medium",
+            "description": "Berlina media"
+          },
+          "crv": {
+            "name": "Honda CR-V",
+            "basePrice": 30000,
+            "volatility": "medium",
+            "description": "SUV compatto"
+          },
+          "nsx": {
+            "name": "Honda NSX",
+            "basePrice": 180000,
+            "volatility": "high",
+            "description": "Supercar ibrida"
+          }
+        }
+      },
+      "8": {
+        "name": "Ford",
+        "items": {
+          "fiesta": {
+            "name": "Ford Fiesta",
+            "basePrice": 13000,
+            "volatility": "low",
+            "description": "Utilitaria americana"
+          },
+          "focus": {
+            "name": "Ford Focus",
+            "basePrice": 19000,
+            "volatility": "medium",
+            "description": "Compatta versatile"
+          },
+          "mondeo": {
+            "name": "Ford Mondeo",
+            "basePrice": 25000,
+            "volatility": "medium",
+            "description": "Berlina familiare"
+          },
+          "kuga": {
+            "name": "Ford Kuga",
+            "basePrice": 28000,
+            "volatility": "medium",
+            "description": "SUV compatto"
+          },
+          "mustang": {
+            "name": "Ford Mustang",
+            "basePrice": 45000,
+            "volatility": "high",
+            "description": "Muscle car iconica"
+          }
+        }
+      },
+      "9": {
+        "name": "Tesla",
+        "items": {
+          "model3": {
+            "name": "Tesla Model 3",
+            "basePrice": 45000,
+            "volatility": "high",
+            "description": "Berlina elettrica"
+          },
+          "modelY": {
+            "name": "Tesla Model Y",
+            "basePrice": 52000,
+            "volatility": "high",
+            "description": "SUV elettrico"
+          },
+          "models": {
+            "name": "Tesla Model S",
+            "basePrice": 85000,
+            "volatility": "high",
+            "description": "Sedan di lusso elettrica"
+          },
+          "modelx": {
+            "name": "Tesla Model X",
+            "basePrice": 95000,
+            "volatility": "high",
+            "description": "SUV di lusso elettrico"
+          },
+          "cybertruck": {
+            "name": "Tesla Cybertruck",
+            "basePrice": 55000,
+            "volatility": "high",
+            "description": "Pick-up futuristico"
+          }
+        }
+      },
+      "10": {
+        "name": "Ferrari",
+        "items": {
+          "488": {
+            "name": "Ferrari 488",
+            "basePrice": 350000,
+            "volatility": "high",
+            "description": "Supercar V8"
+          },
+          "roma": {
+            "name": "Ferrari Roma",
+            "basePrice": 220000,
+            "volatility": "high",
+            "description": "Gran turismo elegante"
+          },
+          "portofino": {
+            "name": "Ferrari Portofino",
+            "basePrice": 250000,
+            "volatility": "high",
+            "description": "Spider sportiva"
+          },
+          "f8": {
+            "name": "Ferrari F8",
+            "basePrice": 380000,
+            "volatility": "high",
+            "description": "Supercar ibrida"
+          },
+          "sf90": {
+            "name": "Ferrari SF90",
+            "basePrice": 500000,
+            "volatility": "high",
+            "description": "Hypercar ibrida"
+          }
+        }
+      }
+    }
+  },
+  "2": {
+    "name": "Proprietà",
+    "subcategories": {
+      "1": {
+        "name": "Appartamenti Milano",
+        "items": {
+          "app_milano_centro": {
+            "name": "Appartamento Centro Milano",
+            "basePrice": 500000,
+            "volatility": "medium",
+            "description": "Appartamento 100mq in centro storico"
+          },
+          "app_milano_navigli": {
+            "name": "Appartamento Navigli Milano",
+            "basePrice": 350000,
+            "volatility": "medium",
+            "description": "Loft 80mq nei Navigli"
+          },
+          "app_milano_isola": {
+            "name": "Appartamento Isola Milano",
+            "basePrice": 450000,
+            "volatility": "high",
+            "description": "Attico 120mq nell'Isola"
+          },
+          "app_milano_brera": {
+            "name": "Appartamento Brera Milano",
+            "basePrice": 600000,
+            "volatility": "high",
+            "description": "Palazzo storico 150mq in Brera"
+          },
+          "app_milano_citylife": {
+            "name": "Appartamento CityLife Milano",
+            "basePrice": 700000,
+            "volatility": "high",
+            "description": "Penthouse 200mq a CityLife"
+          }
+        }
+      },
+      "2": {
+        "name": "Ville Roma",
+        "items": {
+          "villa_roma_trastevere": {
+            "name": "Villa Trastevere Roma",
+            "basePrice": 800000,
+            "volatility": "medium",
+            "description": "Villa 300mq con giardino a Trastevere"
+          },
+          "villa_roma_monteverde": {
+            "name": "Villa Monteverde Roma",
+            "basePrice": 650000,
+            "volatility": "medium",
+            "description": "Villa bifamiliare 250mq"
+          },
+          "villa_roma_eur": {
+            "name": "Villa EUR Roma",
+            "basePrice": 750000,
+            "volatility": "high",
+            "description": "Villa moderna 280mq nell'EUR"
+          },
+          "villa_roma_olgiata": {
+            "name": "Villa Olgiata Roma",
+            "basePrice": 1200000,
+            "volatility": "high",
+            "description": "Villa di lusso 400mq con piscina"
+          },
+          "villa_roma_appia": {
+            "name": "Villa Appia Antica Roma",
+            "basePrice": 900000,
+            "volatility": "high",
+            "description": "Villa storica 350mq sull'Appia Antica"
+          }
+        }
+      },
+      "3": {
+        "name": "Case Firenze",
+        "items": {
+          "casa_firenze_oltrarno": {
+            "name": "Casa Oltrarno Firenze",
+            "basePrice": 550000,
+            "volatility": "medium",
+            "description": "Casa 180mq in Oltrarno"
+          },
+          "casa_firenze_santa_croce": {
+            "name": "Casa Santa Croce Firenze",
+            "basePrice": 480000,
+            "volatility": "medium",
+            "description": "Appartamento 140mq in Santa Croce"
+          },
+          "casa_firenze_boboli": {
+            "name": "Casa Boboli Firenze",
+            "basePrice": 850000,
+            "volatility": "high",
+            "description": "Villa 300mq vicino ai Boboli"
+          },
+          "casa_firenze_piazza_signoria": {
+            "name": "Casa Piazza Signoria Firenze",
+            "basePrice": 1200000,
+            "volatility": "high",
+            "description": "Palazzo storico 400mq"
+          },
+          "casa_firenze_fiesole": {
+            "name": "Casa Fiesole Firenze",
+            "basePrice": 650000,
+            "volatility": "high",
+            "description": "Villa 250mq a Fiesole"
+          }
+        }
+      }
+    }
+  },
+  "3": {
+    "name": "Stocks",
+    "subcategories": {
+      "1": {
+        "name": "Tecnologia",
+        "items": {
+          "AAPL": {
+            "name": "Apple Inc.",
+            "basePrice": 180,
+            "volatility": "high",
+            "description": "Leader mondiale in dispositivi elettronici"
+          },
+          "MSFT": {
+            "name": "Microsoft Corporation",
+            "basePrice": 380,
+            "volatility": "high",
+            "description": "Software e cloud computing"
+          },
+          "GOOGL": {
+            "name": "Alphabet Inc.",
+            "basePrice": 140,
+            "volatility": "high",
+            "description": "Motore di ricerca e pubblicità online"
+          },
+          "AMZN": {
+            "name": "Amazon.com Inc.",
+            "basePrice": 155,
+            "volatility": "high",
+            "description": "E-commerce e servizi cloud"
+          },
+          "TSLA": {
+            "name": "Tesla Inc.",
+            "basePrice": 220,
+            "volatility": "high",
+            "description": "Veicoli elettrici e energia rinnovabile"
+          }
+        }
+      },
+      "2": {
+        "name": "Finanza",
+        "items": {
+          "JPM": {
+            "name": "JPMorgan Chase & Co.",
+            "basePrice": 160,
+            "volatility": "medium",
+            "description": "Banca d'investimento globale"
+          },
+          "BAC": {
+            "name": "Bank of America Corp.",
+            "basePrice": 35,
+            "volatility": "medium",
+            "description": "Servizi bancari retail"
+          },
+          "WFC": {
+            "name": "Wells Fargo & Co.",
+            "basePrice": 45,
+            "volatility": "medium",
+            "description": "Banca commerciale americana"
+          },
+          "GS": {
+            "name": "Goldman Sachs Group Inc.",
+            "basePrice": 380,
+            "volatility": "high",
+            "description": "Investment banking"
+          },
+          "MS": {
+            "name": "Morgan Stanley",
+            "basePrice": 85,
+            "volatility": "medium",
+            "description": "Gestione patrimoniale e investment banking"
+          }
+        }
+      },
+      "3": {
+        "name": "Energia",
+        "items": {
+          "XOM": {
+            "name": "Exxon Mobil Corp.",
+            "basePrice": 110,
+            "volatility": "medium",
+            "description": "Petrolio e gas naturale"
+          },
+          "CVX": {
+            "name": "Chevron Corporation",
+            "basePrice": 155,
+            "volatility": "medium",
+            "description": "Energia e prodotti chimici"
+          },
+          "COP": {
+            "name": "ConocoPhillips",
+            "basePrice": 110,
+            "volatility": "high",
+            "description": "Esplorazione petrolifera"
+          },
+          "ENB": {
+            "name": "Enbridge Inc.",
+            "basePrice": 35,
+            "volatility": "low",
+            "description": "Oleodotti e gasdotti"
+          },
+          "SLB": {
+            "name": "Schlumberger Ltd.",
+            "basePrice": 45,
+            "volatility": "high",
+            "description": "Servizi petroliferi"
+          }
+        }
+      }
+    }
+  },
+  "4": {
+    "name": "Crypto",
+    "subcategories": {
+      "1": {
+        "name": "Major Coins",
+        "items": {
+          "BTC": {
+            "name": "Bitcoin",
+            "basePrice": 45000,
+            "volatility": "high",
+            "description": "La criptovaluta originale"
+          },
+          "ETH": {
+            "name": "Ethereum",
+            "basePrice": 2800,
+            "volatility": "high",
+            "description": "Smart contracts platform"
+          },
+          "BNB": {
+            "name": "Binance Coin",
+            "basePrice": 320,
+            "volatility": "high",
+            "description": "Token dell'exchange Binance"
+          },
+          "ADA": {
+            "name": "Cardano",
+            "basePrice": 0.45,
+            "volatility": "high",
+            "description": "Blockchain proof-of-stake"
+          },
+          "SOL": {
+            "name": "Solana",
+            "basePrice": 95,
+            "volatility": "high",
+            "description": "High-performance blockchain"
+          }
+        }
+      },
+      "2": {
+        "name": "DeFi Tokens",
+        "items": {
+          "UNI": {
+            "name": "Uniswap",
+            "basePrice": 6.5,
+            "volatility": "high",
+            "description": "Decentralized exchange protocol"
+          },
+          "AAVE": {
+            "name": "Aave",
+            "basePrice": 85,
+            "volatility": "high",
+            "description": "Decentralized lending protocol"
+          },
+          "COMP": {
+            "name": "Compound",
+            "basePrice": 55,
+            "volatility": "high",
+            "description": "Algorithmic money markets"
+          },
+          "MKR": {
+            "name": "Maker",
+            "basePrice": 1200,
+            "volatility": "high",
+            "description": "Decentralized stablecoin platform"
+          },
+          "SUSHI": {
+            "name": "SushiSwap",
+            "basePrice": 1.2,
+            "volatility": "high",
+            "description": "Decentralized exchange"
+          }
+        }
+      },
+      "3": {
+        "name": "Meme Coins",
+        "items": {
+          "DOGE": {
+            "name": "Dogecoin",
+            "basePrice": 0.08,
+            "volatility": "high",
+            "description": "Meme coin ispirata a Doge"
+          },
+          "SHIB": {
+            "name": "Shiba Inu",
+            "basePrice": 0.00001,
+            "volatility": "high",
+            "description": "Meme coin ispirata a Shiba Inu"
+          },
+          "PEPE": {
+            "name": "Pepe",
+            "basePrice": 0.000001,
+            "volatility": "high",
+            "description": "Meme coin ispirata a Pepe the Frog"
+          },
+          "FLOKI": {
+            "name": "Floki Inu",
+            "basePrice": 0.00003,
+            "volatility": "high",
+            "description": "Meme coin ispirata a Floki"
+          },
+          "BONK": {
+            "name": "Bonk",
+            "basePrice": 2e-7,
+            "volatility": "high",
+            "description": "Meme coin del Solana ecosystem"
+          }
+        }
+      }
+    }
+  },
+  "5": {
+    "name": "Arte",
+    "subcategories": {
+      "1": {
+        "name": "Dipinti",
+        "items": {
+          "mona_lisa": {
+            "name": "La Gioconda - Leonardo da Vinci",
+            "basePrice": 850000000,
+            "volatility": "high",
+            "description": "Il dipinto più famoso del mondo"
+          },
+          "notte_stellata": {
+            "name": "La Notte Stellata - Vincent van Gogh",
+            "basePrice": 100000000,
+            "volatility": "high",
+            "description": "Opera post-impressionista"
+          },
+          "urlo": {
+            "name": "L'Urlo - Edvard Munch",
+            "basePrice": 120000000,
+            "volatility": "high",
+            "description": "Espressionismo norvegese"
+          },
+          "guernica": {
+            "name": "Guernica - Pablo Picasso",
+            "basePrice": 200000000,
+            "volatility": "high",
+            "description": "Anti-guerra cubista"
+          },
+          "nascita_venere": {
+            "name": "La Nascita di Venere - Sandro Botticelli",
+            "basePrice": 500000000,
+            "volatility": "high",
+            "description": "Rinascimento italiano"
+          }
+        }
+      },
+      "2": {
+        "name": "Sculture",
+        "items": {
+          "david": {
+            "name": "David - Michelangelo",
+            "basePrice": 300000000,
+            "volatility": "medium",
+            "description": "Scultura rinascimentale"
+          },
+          "pensatore": {
+            "name": "Il Pensatore - Auguste Rodin",
+            "basePrice": 15000000,
+            "volatility": "medium",
+            "description": "Bronzo simbolista"
+          },
+          "bacio": {
+            "name": "Il Bacio - Auguste Rodin",
+            "basePrice": 18000000,
+            "volatility": "medium",
+            "description": "Scultura romantica"
+          },
+          "madre_patrone": {
+            "name": "Madre e Patrone - Henry Moore",
+            "basePrice": 25000000,
+            "volatility": "high",
+            "description": "Scultura moderna"
+          },
+          "uccello_pace": {
+            "name": "Uccello della Pace - Pablo Picasso",
+            "basePrice": 30000000,
+            "volatility": "high",
+            "description": "Scultura cubista"
+          }
+        }
+      },
+      "3": {
+        "name": "Fotografia",
+        "items": {
+          "afghan_girl": {
+            "name": "Ragazza Afghana - Steve McCurry",
+            "basePrice": 150000,
+            "volatility": "medium",
+            "description": "Iconica foto di National Geographic"
+          },
+          "tank_man": {
+            "name": "Tank Man - Jeff Widener",
+            "basePrice": 100000,
+            "volatility": "medium",
+            "description": "Simbolo della resistenza cinese"
+          },
+          "earthrise": {
+            "name": "Earthrise - William Anders",
+            "basePrice": 200000,
+            "volatility": "low",
+            "description": "Prima foto della Terra dallo spazio"
+          },
+          "napalm_girl": {
+            "name": "Napalm Girl - Nick Ut",
+            "basePrice": 120000,
+            "volatility": "medium",
+            "description": "Foto premio Pulitzer"
+          },
+          "vulture": {
+            "name": "The Vulture and the Little Girl - Kevin Carter",
+            "basePrice": 80000,
+            "volatility": "low",
+            "description": "Foto controversa premio Pulitzer"
+          }
+        }
+      }
+    }
+  },
+  "6": {
+    "name": "Monumenti",
+    "subcategories": {
+      "1": {
+        "name": "Europa",
+        "items": {
+          "colosseo": {
+            "name": "Colosseo - Roma",
+            "basePrice": 5000000000,
+            "volatility": "low",
+            "description": "Anfiteatro romano simbolo dell'Impero"
+          },
+          "torre_eiffel": {
+            "name": "Torre Eiffel - Parigi",
+            "basePrice": 3000000000,
+            "volatility": "medium",
+            "description": "Monumento simbolo di Parigi"
+          },
+          "big_ben": {
+            "name": "Big Ben - Londra",
+            "basePrice": 2000000000,
+            "volatility": "medium",
+            "description": "Orologio simbolo del Regno Unito"
+          },
+          "sagrada_familia": {
+            "name": "Sagrada Familia - Barcellona",
+            "basePrice": 4000000000,
+            "volatility": "high",
+            "description": "Basilica modernista incompleta"
+          },
+          "acropoli": {
+            "name": "Acropoli - Atene",
+            "basePrice": 1500000000,
+            "volatility": "low",
+            "description": "Cittadella antica greca"
+          }
+        }
+      },
+      "2": {
+        "name": "America",
+        "items": {
+          "statua_liberta": {
+            "name": "Statua della Libertà - New York",
+            "basePrice": 2500000000,
+            "volatility": "medium",
+            "description": "Simbolo della libertà americana"
+          },
+          "golden_gate": {
+            "name": "Golden Gate Bridge - San Francisco",
+            "basePrice": 1800000000,
+            "volatility": "medium",
+            "description": "Ponte iconico della California"
+          },
+          "mount_rushmore": {
+            "name": "Mount Rushmore - Dakota del Sud",
+            "basePrice": 1200000000,
+            "volatility": "low",
+            "description": "Memoriale dei presidenti scolpito nella roccia"
+          },
+          "washington_monument": {
+            "name": "Washington Monument - Washington DC",
+            "basePrice": 1000000000,
+            "volatility": "low",
+            "description": "Obelisco in onore di George Washington"
+          },
+          "lincoln_memorial": {
+            "name": "Lincoln Memorial - Washington DC",
+            "basePrice": 900000000,
+            "volatility": "low",
+            "description": "Memoriale di Abraham Lincoln"
+          }
+        }
+      },
+      "3": {
+        "name": "Asia",
+        "items": {
+          "grande_muro": {
+            "name": "Grande Muro Cinese",
+            "basePrice": 8000000000,
+            "volatility": "low",
+            "description": "Muro difensivo lungo migliaia di chilometri"
+          },
+          "taj_mahal": {
+            "name": "Taj Mahal - India",
+            "basePrice": 3000000000,
+            "volatility": "medium",
+            "description": "Mausoleo di marmo bianco"
+          },
+          "tempio_cielo": {
+            "name": "Tempio del Cielo - Pechino",
+            "basePrice": 1500000000,
+            "volatility": "low",
+            "description": "Complesso architettonico imperiale"
+          },
+          "borobudur": {
+            "name": "Borobudur - Indonesia",
+            "basePrice": 1200000000,
+            "volatility": "low",
+            "description": "Tempio buddista più grande del mondo"
+          },
+          "petra": {
+            "name": "Petra - Giordania",
+            "basePrice": 2000000000,
+            "volatility": "medium",
+            "description": "Città scavata nella roccia"
+          }
+        }
+      }
+    }
+  },
+  "7": {
+    "name": "Zozzap Custom Market",
+    "subcategories": {}
+  }
+}

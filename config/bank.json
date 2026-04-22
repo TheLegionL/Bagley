@@ -1,0 +1,83 @@
+{
+  "accounts": {
+    "245689678311617@lid": {
+      "balance": 5100,
+      "createdAt": 1768965193828
+    },
+    "16424626057376@lid": {
+      "balance": 84250,
+      "createdAt": 1768965466346
+    },
+    "51411178017009@lid": {
+      "balance": 6666,
+      "createdAt": 1768965872215
+    },
+    "175548886171833@lid": {
+      "balance": 5000,
+      "createdAt": 1768966387696
+    },
+    "75519030730784@lid": {
+      "balance": 1000005000,
+      "createdAt": 1769053416527
+    },
+    "213340286640349@lid": {
+      "balance": 0,
+      "createdAt": 1769096155683
+    },
+    "62315680551088@lid": {
+      "balance": 0,
+      "createdAt": 1769096757838
+    },
+    "131018195513494@lid": {
+      "balance": 5000,
+      "createdAt": 1769541123795
+    },
+    "219542269726793@lid": {
+      "balance": 0,
+      "createdAt": 1769827860711
+    },
+    "275728931270902@lid": {
+      "balance": 4896,
+      "createdAt": 1769966409751,
+      "loan": {
+        "principal": 4000,
+        "interestRate": 13,
+        "totalDue": 4520,
+        "remaining": 4520,
+        "installmentAmount": 452,
+        "grantedAt": 1769972919915,
+        "lastDebitAt": null,
+        "nextDebitAt": 1769986800000
+      }
+    },
+    "2096715808888@lid": {
+      "balance": 400,
+      "createdAt": 1769966469202
+    },
+    "205510578053174@lid": {
+      "balance": 0,
+      "createdAt": 1770767412754
+    },
+    "140857932042446@lid": {
+      "balance": 0,
+      "createdAt": 1770767431271
+    },
+    "117575501488167@lid": {
+      "balance": 5666,
+      "createdAt": 1771162329499
+    },
+    "31087677944027@lid": {
+      "balance": 1005000,
+      "createdAt": 1771991214404
+    },
+    "13959331606739@lid": {
+      "balance": 4600,
+      "createdAt": 1773170179002
+    },
+    "126697408049254@lid": {
+      "balance": 5000,
+      "createdAt": 1773979975600
+    }
+  },
+  "updatedAt": 1773979975601
+}

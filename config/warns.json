@@ -415,12 +415,17 @@
     ]
   },
   "79779571187964@lid": {
-    "count": 1,
+    "count": 2,
     "history": [
       {
         "by": "6282267601028@s.whatsapp.net",
         "reason": "Spam/Flood rilevato (antispam).",
         "timestamp": 1765931037602
+      },
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1767915221117
       }
     ]
   },
@@ -755,12 +760,17 @@
     ]
   },
   "232057200504949@lid": {
-    "count": 1,
+    "count": 2,
     "history": [
       {
         "by": "6282267601028@s.whatsapp.net",
         "reason": "Link vietato rilevato (antilink).",
         "timestamp": 1766867155577
+      },
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769044257642
       }
     ]
   },
@@ -775,12 +785,17 @@
     ]
   },
   "99952697036827@lid": {
-    "count": 1,
+    "count": 2,
     "history": [
       {
         "by": "6282267601028@s.whatsapp.net",
         "reason": "Spam/Flood rilevato (antispam).",
         "timestamp": 1766867201988
+      },
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768084991260
       }
     ]
   },
@@ -879,16 +894,6 @@
       }
     ]
   },
-  "44762635722772@lid": {
-    "count": 1,
-    "history": [
-      {
-        "by": "6282267601028@s.whatsapp.net",
-        "reason": "Link vietato rilevato (antilink).",
-        "timestamp": 1766978908563
-      }
-    ]
-  },
   "182905695387658@lid": {
     "count": 1,
     "history": [
@@ -956,6 +961,876 @@
         "by": "6282267601028@s.whatsapp.net",
         "reason": "Link vietato rilevato (antilink).",
         "timestamp": 1767044598044
+      }
+    ]
+  },
+  "129463350247587@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "62315680551088@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1767912676684
+      }
+    ]
+  },
+  "128591740280902@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1768082560185
+      },
+      {
+        "by": "229905992306771@lid",
+        "reason": "non si scrive senza permesso",
+        "timestamp": 1768082633074
+      }
+    ]
+  },
+  "54760900141168@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768418821333
+      }
+    ]
+  },
+  "20663138017321@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768419902164
+      },
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769461874680
+      }
+    ]
+  },
+  "142825295495361@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza consenso",
+        "timestamp": 1768431539530
+      },
+      {
+        "by": "213340286640349@lid",
+        "reason": "no porno",
+        "timestamp": 1768431821077
+      }
+    ]
+  },
+  "167911763238981@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768504572473
+      }
+    ]
+  },
+  "207666232189159@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768508824126
+      }
+    ]
+  },
+  "132529923338253@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768770910358
+      }
+    ]
+  },
+  "153094679724071@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768771263767
+      },
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1771587602108
+      }
+    ]
+  },
+  "59966719299629@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "270939908472887@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1768773168995
+      },
+      {
+        "by": "270939908472887@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1768773240026
+      }
+    ]
+  },
+  "222127873609971@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768854078372
+      },
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768854078645
+      }
+    ]
+  },
+  "62677044985856@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "44762635722772@lid",
+        "reason": "per spam",
+        "timestamp": 1768862428097
+      }
+    ]
+  },
+  "244817581858844@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768929301085
+      }
+    ]
+  },
+  "186543952117930@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "270939908472887@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1768930898279
+      }
+    ]
+  },
+  "125301426249834@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "139105501499462@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1768931515041
+      }
+    ]
+  },
+  "279542895755431@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1768935498635
+      }
+    ]
+  },
+  "64098226159764@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "247614108917857@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1768946790731
+      },
+      {
+        "by": "247614108917857@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1768946808141
+      }
+    ]
+  },
+  "7529513881829@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "15483524886776@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1768946867135
+      }
+    ]
+  },
+  "267933548851280@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "non vuole bene a teo",
+        "timestamp": 1768953812638
+      }
+    ]
+  },
+  "2164697088184@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza consenso",
+        "timestamp": 1769099778140
+      }
+    ]
+  },
+  "61083729588420@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769457475350
+      }
+    ]
+  },
+  "14121852493923@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769459199304
+      }
+    ]
+  },
+  "193106561515678@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1769469527897
+      }
+    ]
+  },
+  "163384968376486@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769538028151
+      }
+    ]
+  },
+  "252862105915445@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769539011300
+      }
+    ]
+  },
+  "134969364103397@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769540562108
+      }
+    ]
+  },
+  "144336939446364@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769543987615
+      }
+    ]
+  },
+  "176858817630430@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "16424626057376@lid",
+        "reason": "sei un meme tacchini peloso",
+        "timestamp": 1769548421384
+      }
+    ]
+  },
+  "78890663944241@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "275728931270902@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1769965484529
+      }
+    ]
+  },
+  "263913358815338@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769972882209
+      }
+    ]
+  },
+  "207516193566971@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769981304007
+      }
+    ]
+  },
+  "79053285515359@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1769983825606
+      }
+    ]
+  },
+  "225022547386543@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769987334253
+      }
+    ]
+  },
+  "117566156607549@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "pvt senza permesso",
+        "timestamp": 1769988882952
+      }
+    ]
+  },
+  "209655221457125@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1769990079452
+      }
+    ]
+  },
+  "235545317921009@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1769998509074
+      }
+    ]
+  },
+  "29266662129895@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "16424626057376@lid",
+        "reason": "impara a scrivere",
+        "timestamp": 1770343135581
+      }
+    ]
+  },
+  "71442502807781@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1770344296503
+      }
+    ]
+  },
+  "267194244038785@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1770767176682
+      }
+    ]
+  },
+  "258840801050829@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1771152339539
+      }
+    ]
+  },
+  "93510598455333@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1771153932081
+      }
+    ]
+  },
+  "105690572030016@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1771155769399
+      }
+    ]
+  },
+  "164304661782576@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1771161278093
+      }
+    ]
+  },
+  "139105501499462@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1771166585290
+      },
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1771247471705
+      }
+    ]
+  },
+  "40867301728339@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1771167088327
+      }
+    ]
+  },
+  "134746713645242@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1771170020369
+      }
+    ]
+  },
+  "272356878598344@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1771247472385
+      },
+      {
+        "by": "270939908472887@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1771248830580
+      }
+    ]
+  },
+  "175170408939749@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1771529967779
+      }
+    ]
+  },
+  "140802617512182@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1771544798425
+      }
+    ]
+  },
+  "60340029137094@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza consenso",
+        "timestamp": 1771575963936
+      }
+    ]
+  },
+  "88683155878037@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "44762635722772@lid",
+        "reason": "NON SI SCRIVE IN PRIVATO SENZA PERMESSO",
+        "timestamp": 1771582752699
+      }
+    ]
+  },
+  "188978594635782@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "pvt senza permesso",
+        "timestamp": 1771982177914
+      }
+    ]
+  },
+  "163084387770534@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1772033875512
+      }
+    ]
+  },
+  "240827758596316@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "62315680551088@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1772052322964
+      }
+    ]
+  },
+  "78456368967790@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "pvt senza permesso",
+        "timestamp": 1772054262721
+      }
+    ]
+  },
+  "223312579977329@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "pvt senza permesso",
+        "timestamp": 1772066911449
+      },
+      {
+        "by": "213340286640349@lid",
+        "reason": "pvt senza permesson",
+        "timestamp": 1772067026846
+      }
+    ]
+  },
+  "213782030712837@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "205510578053174@lid",
+        "reason": "no spam",
+        "timestamp": 1772635828106
+      }
+    ]
+  },
+  "248034462011584@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1772738016531
+      }
+    ]
+  },
+  "64678097072224@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1772756278801
+      }
+    ]
+  },
+  "57956355801126@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "44762635722772@lid",
+        "reason": "scritto in privato senza permesso",
+        "timestamp": 1772767526504
+      }
+    ]
+  },
+  "91324040630459@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1772924831324
+      }
+    ]
+  },
+  "156611754618930@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1772929972670
+      }
+    ]
+  },
+  "204543757410317@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "44762635722772@lid",
+        "reason": "scritto in privato senza permesso",
+        "timestamp": 1772981919916
+      }
+    ]
+  },
+  "78881486819567@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1773173335479
+      }
+    ]
+  },
+  "78581141123155@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1773173545885
+      }
+    ]
+  },
+  "165777919471728@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "44762635722772@lid",
+        "reason": "scritto in privato senza permesso",
+        "timestamp": 1773432874088
+      }
+    ]
+  },
+  "178125732315182@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1773442655123
+      }
+    ]
+  },
+  "210118423658711@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1773694425958
+      }
+    ]
+  },
+  "31164635025490@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1773983356176
+      }
+    ]
+  },
+  "11656641949701@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1773990976532
+      }
+    ]
+  },
+  "94940268904516@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1774008492254
+      }
+    ]
+  },
+  "182596508078151@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "213340286640349@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1774025882880
+      }
+    ]
+  },
+  "158480702951552@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "4956459380906@lid",
+        "reason": "privato senza permesso",
+        "timestamp": 1774026192316
+      }
+    ]
+  },
+  "236867597406228@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1774038659282
+      }
+    ]
+  },
+  "126697408049254@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1774047874501
+      },
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1774053704253
+      }
+    ]
+  },
+  "102538552545425@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Spam/Flood rilevato (antispam).",
+        "timestamp": 1774055422013
+      }
+    ]
+  },
+  "169002752077981@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "205510578053174@lid",
+        "reason": "Motivo non specificato.",
+        "timestamp": 1774218881400
+      }
+    ]
+  },
+  "8637263155327@lid": {
+    "count": 2,
+    "history": [
+      {
+        "by": "205510578053174@lid",
+        "reason": "babbuino",
+        "timestamp": 1774223963781
+      },
+      {
+        "by": "205510578053174@lid",
+        "reason": "zz",
+        "timestamp": 1774224071312
+      }
+    ]
+  },
+  "83760536154187@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "44762635722772@lid",
+        "reason": "scritto senza permesso",
+        "timestamp": 1774391744428
+      }
+    ]
+  },
+  "2684371353613@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "6282267601028@s.whatsapp.net",
+        "reason": "Link vietato rilevato (antilink).",
+        "timestamp": 1774486686882
+      }
+    ]
+  },
+  "172774387630173@lid": {
+    "count": 1,
+    "history": [
+      {
+        "by": "205510578053174@lid",
+        "reason": "spam",
+        "timestamp": 1774998127423
       }
     ]
   }

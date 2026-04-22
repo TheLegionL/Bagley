@@ -5,8 +5,10 @@ const { XMLParser } = require('fast-xml-parser');
 const { decode } = require('html-entities');
 const translate = require('@vitalets/google-translate-api');
 const cheerio = require('cheerio');
+const imageLib = require('./image-lib');
 const { PermissionLevel, PermissionLabels, normalizeJid } = require('./permissions');
 const { getMentionedJids, extractContextInfo, extractMessageText } = require('./utils');
+const { CURRENCY_SYMBOL } = require('./bank-service');
 let StickerLib;
 let StickerTypesLib;
 try {
@@ -76,9 +78,18 @@ const COMMAND_CATEGORY_LABELS = {
   music: '🎶 Musica & Last.fm',
   moderation: '🚨 Moderazione',
   security: '👮 Sistemi di sicurezza',
+  economy: '฿ BagleyBank',
+  games: '🎮 Minigiochi',
   media: '📺 Strumenti multimediali',
   takeover: '💀 Azioni estreme',
   misc: '♿ Altri comandi'
+};
+
+const HELP_PERMISSION_BADGES = {
+  [PermissionLevel.MEMBER]: '',
+  [PermissionLevel.ADMIN]: '',
+  [PermissionLevel.WHITELIST]: '',
+  [PermissionLevel.OWNER]: ''
 };
 
 const COMMAND_CATEGORY_ORDER = [
@@ -88,10 +99,14 @@ const COMMAND_CATEGORY_ORDER = [
   'music',
   'moderation',
   'security',
+  'economy',
+  'games',
   'media',
   'takeover',
   'misc'
 ];
+
+const HIDDEN_COMMANDS = new Set(['steal', 'abuse']);
 
 const COMMAND_CATEGORY_MAP = {
   help: 'general',
@@ -137,15 +152,29 @@ const COMMAND_CATEGORY_MAP = {
   antibot: 'security',
   antispam: 'security',
   antinuke: 'security',
+  antighost: 'security',
   marcus: 'security',
   bagley: 'security',
   ai: 'security',
   blacklist: 'security',
+  osint: 'security',
   shh: 'security',
   ko: 'security',
+  greet: 'security',
+  account: 'economy',
+  saldo: 'economy',
+  dona: 'economy',
+  aumento: 'economy',
+  prestito: 'economy',
+  paga: 'economy',
+  topalbums: 'music',
+  topartists: 'music',
+  coinflip: 'games',
+  pic: 'media',
   text: 'media',
   rivela: 'media',
   s: 'media',
+  games: 'security',
   steal: 'takeover',
   abuse: 'takeover'
 };
@@ -195,11 +224,38 @@ function getParticipantDisplayName(jid, groupMetadata) {
   );
 }
 
-function buildHelpMessage(level, commandList) {
-  const prefixes = ['!', '/'];
-  const grouped = new Map();
+const HELP_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
 
+const buildHelpCard = ({
+  title = '📖 Bagley Help',
+  sections = [],
+  footer = '🤖 Powered By Bagley'
+} = {}) => {
+  const payload = [title, HELP_CARD_DIVIDER];
+  sections.forEach((section, index) => {
+    if (!section?.lines?.length) {
+      return;
+    }
+    if (index > 0) {
+      payload.push('');
+    }
+    const sectionLabel = section.label ? `${section.label}:` : 'Sezione:';
+    payload.push(sectionLabel);
+    section.lines.forEach((line) => payload.push(line));
+  });
+  payload.push(HELP_CARD_DIVIDER);
+  if (footer) {
+    payload.push(footer);
+  }
+  return payload.join('\n');
+};
+
+function buildHelpMessage(level, commandList) {
+  const grouped = new Map();
   for (const command of commandList) {
+    if (HIDDEN_COMMANDS.has(command.name)) {
+      continue;
+    }
     if (level < command.minLevel) {
       continue;
     }
@@ -210,7 +266,12 @@ function buildHelpMessage(level, commandList) {
     grouped.get(key).push(command);
   }
 
-  const lines = ['Comandi disponibili (per categoria):'];
+  const sections = [];
+  const renderLine = (cmd) => {
+    const badge = HELP_PERMISSION_BADGES[cmd.minLevel] || '';
+    const badgeText = badge ? `${badge} ` : '';
+    return `- ${badgeText}!${cmd.usage} → ${cmd.description}`;
+  };
 
   const emitCategory = (key) => {
     const entries = grouped.get(key);
@@ -218,12 +279,11 @@ function buildHelpMessage(level, commandList) {
       return;
     }
     const label = COMMAND_CATEGORY_LABELS[key] || COMMAND_CATEGORY_LABELS.misc || key;
-    lines.push('');
-    lines.push(`${label}:`);
-    for (const cmd of entries) {
-      const examples = prefixes.map((prefix) => `${prefix}${cmd.usage}`).join(' / ');
-      lines.push(`- ${examples} → ${cmd.description}`);
-    }
+    const sorted = [...entries].sort((a, b) => a.name.localeCompare(b.name));
+    sections.push({
+      label,
+      lines: sorted.map(renderLine)
+    });
   };
 
   for (const key of COMMAND_CATEGORY_ORDER) {
@@ -235,7 +295,18 @@ function buildHelpMessage(level, commandList) {
     emitCategory(key);
   }
 
-  return lines.join('\n');
+  if (!sections.length) {
+    return buildHelpCard({
+      sections: [
+        {
+          label: 'Nessun comando disponibile',
+          lines: ['Non hai i permessi per visualizzare i comandi.']
+        }
+      ]
+    });
+  }
+
+  return buildHelpCard({ sections });
 }
 
 const groupLabelCache = new Map();
@@ -355,7 +426,13 @@ function createCommandRegistry(dependencies) {
     blacklistEnforcer,
     botToggleService,
     aiToggleService,
-    silenceService
+    silenceService,
+    greetService,
+    antighostService,
+    bankService,
+    gamesToggleService,
+    osintService,
+    marketService
   } = dependencies;
 
   const isParticipantAdmin = (participant) => {
@@ -816,16 +893,31 @@ function createCommandRegistry(dependencies) {
       terminateNode.attrs['group-jid'] = groupJid;
     }
 
-    const stanza = {
+    const makeStanza = (to) => ({
       tag: 'call',
       attrs: {
         from: sock.user?.id,
-        to: callCreator
+        to
       },
       content: [terminateNode]
-    };
+    });
 
-    await sock.query(stanza);
+    const targets = [callCreator, callInfo.chatId, callInfo.groupJid].filter(Boolean);
+
+    let lastErr = null;
+    for (const target of targets) {
+      try {
+        const stanza = makeStanza(target);
+        await sock.query(stanza);
+        return; // success
+      } catch (err) {
+        lastErr = err;
+        logger?.warn({ err, target, callInfo }, 'Tentativo fallito per terminare la voice chat con questo target, provo il successivo');
+      }
+    }
+
+    // se tutti i tentativi falliscono rilancia l'ultimo errore
+    throw lastErr || new Error('Impossibile inviare stanza di terminazione');
   };
 
   const applyWarn = async ({
@@ -1046,10 +1138,28 @@ function createCommandRegistry(dependencies) {
       return cachedName;
     }
 
+    // Ricerca aggressiva nel metadata del gruppo
     const groupName = getParticipantDisplayName(normalized, context.groupMetadata);
     if (groupName) {
       contactCache?.rememberName(normalized, groupName);
       return groupName;
+    }
+
+    // Se siamo in un gruppo e l'utente non ha un nome salvato nel metadata,
+    // prova a ricaricarlo per ottenere i dati più aggiornati
+    if (context.remoteJid?.endsWith('@g.us') && typeof sock.groupMetadata === 'function') {
+      try {
+        const freshMetadata = await sock.groupMetadata(context.remoteJid);
+        const freshName = getParticipantDisplayName(normalized, freshMetadata);
+        if (freshName) {
+          contactCache?.rememberName(normalized, freshName);
+          return freshName;
+        }
+      } catch (error) {
+        if (logger) {
+          logger.debug({ err: error, groupJid: context.remoteJid }, 'Errore nel ricaricamento metadata gruppo');
+        }
+      }
     }
 
     const contact = sock.contacts?.[normalized] || sock.contacts?.[jid];
@@ -1106,11 +1216,23 @@ function createCommandRegistry(dependencies) {
       return `@${displayName}`;
     }
 
+    // Se non abbiamo il nickname, prova a estrarre il numero di telefono dal JID
     const localPart = String(normalized).split('@')[0];
     const withoutDevice = localPart.split(':')[0];
     const digits = withoutDevice.replace(/\D+/g, '');
-    const fallback = digits ? `utente_${digits.slice(-4)}` : 'utente';
-    return `@${fallback}`;
+    
+    // Se abbiamo i digit, mostrali come numero (con formattazione semplice)
+    if (digits) {
+      // Se è italiano (39), mostra come +39...
+      if (digits.startsWith('39')) {
+        const partial = digits.slice(2); // Rimuovi il 39 dal prefisso
+        return `@+39${partial.slice(-10)}`; // Mostra +39 e ultimi 10 digit
+      }
+      // Altrimenti mostra il numero così com'è
+      return `@+${digits}`;
+    }
+    
+    return '@utente';
   };
 
   const formatMentionList = async (jids, context) => {
@@ -1297,6 +1419,25 @@ function createCommandRegistry(dependencies) {
         ? 'Gruppo riammesso ai broadcast: riceverà i prossimi annunci.'
         : 'Il gruppo stava già ricevendo i broadcast.'
     };
+  };
+
+  const extractCommandBody = (context) => {
+    if (!context?.text) {
+      return '';
+    }
+    const trimmed = context.text.trim();
+    if (!trimmed) {
+      return '';
+    }
+    const parsed = context.parsed;
+    const match = trimmed.match(/^([!/])([^\s]+)\s*(.*)$/s);
+    if (match && parsed?.command && match[2].toLowerCase() === parsed.command) {
+      return match[3] || '';
+    }
+    if (Array.isArray(parsed?.args)) {
+      return parsed.args.join(' ');
+    }
+    return '';
   };
 
     const resolveQuotedMedia = (quoted) => {
@@ -1513,7 +1654,535 @@ const resolveSingleCommandTarget = (context) => {
       }
     }
 
-    return { jid: null, source: null };
+  return { jid: null, source: null };
+  };
+
+  const ensureBankReady = () => {
+    if (!bankService) {
+      return bankResponse('⚠️ BagleyBank offline', [
+        'Attiva il servizio nel file di configurazione per usare i comandi economici.'
+      ]);
+    }
+    return null;
+  };
+
+  const formatBankAmount = (value) => {
+    if (bankService?.formatCurrency) {
+      return bankService.formatCurrency(value);
+    }
+    const safe = Math.floor(Number(value) || 0);
+    return `${CURRENCY_SYMBOL || '\u0e3f'}${safe.toLocaleString('it-IT')}`;
+  };
+
+  const BANK_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
+
+  const buildBankText = ({ title, lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+    const payload = ['🏦 BagleyBank', BANK_CARD_DIVIDER];
+    if (title) {
+      payload.push(title);
+    }
+    for (const line of lines) {
+      if (typeof line === 'string' && line.trim()) {
+        payload.push(line);
+      }
+    }
+    payload.push(BANK_CARD_DIVIDER);
+    if (footer) {
+      payload.push(footer);
+    }
+    return payload.join('\n');
+  };
+
+  const bankResponse = (title, lines, { footer, mentions } = {}) => {
+    const message = {
+      text: buildBankText({ title, lines, footer })
+    };
+    if (Array.isArray(mentions) && mentions.length) {
+      message.mentions = Array.from(new Set(mentions.filter(Boolean)));
+    }
+    return message;
+  };
+
+  const bankError = (message) =>
+    bankResponse('⚠️ Operazione non completata', [`❗ ${message}`], { footer: '🛠️ Riprovare piu tardi' });
+
+  const formatBankDate = (timestamp) => {
+    if (!timestamp) {
+      return 'Data non disponibile';
+    }
+    return new Date(timestamp).toLocaleString('it-IT');
+  };
+
+  const buildLoanLines = (loan) => {
+    if (!loan) {
+      return ['✅ Nessun prestito attivo in questo momento.'];
+    }
+    const rateCount = loan.installmentCount || 12;
+    const baseAmount = loan.totalDue || loan.remaining || 0;
+    const installmentValue =
+      loan.installmentAmount || Math.ceil(baseAmount / (rateCount || 12) || baseAmount || 1);
+    return [
+      '⚠️ Prestito attivo',
+      `💰 Residuo: ${formatBankAmount(loan.remaining)} / ${formatBankAmount(loan.totalDue)}`,
+      `📈 Interesse applicato: ${loan.interestRate}%`,
+      `🧾 Rata giornaliera (${rateCount} rate): ${formatBankAmount(installmentValue)}`,
+      `⏰ Prossimo addebito: ${formatBankDate(loan.nextDebitAt)}`
+    ];
+  };
+
+  const MUSIC_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
+
+  const buildMusicCard = (
+    content,
+    { title = '🎧 Bagley FM', footer = '🤖 Powered By Bagley' } = {}
+  ) => {
+    const payload = [title, MUSIC_CARD_DIVIDER];
+    const lines = Array.isArray(content) ? content : [content];
+    for (const line of lines) {
+      if (typeof line === 'string' && line.length) {
+        payload.push(line);
+      }
+    }
+    payload.push(MUSIC_CARD_DIVIDER);
+    if (typeof footer === 'string' && footer.length) {
+      payload.push(footer);
+    }
+    return payload.join('\n');
+  };
+
+  const musicResponse = (content, { mentions, title, footer } = {}) => {
+    const text = buildMusicCard(content, { title, footer });
+    const payload = { text };
+    if (Array.isArray(mentions) && mentions.length) {
+      payload.mentions = Array.from(new Set(mentions.filter(Boolean)));
+    }
+    return payload;
+  };
+
+  const ensureGamesSystemReady = () => {
+    if (!gamesToggleService) {
+      return { text: '🎮 Il sistema giochi non è disponibile su questa istanza.' };
+    }
+    return null;
+  };
+
+  const ensureGamesAllowed = async (context) => {
+    const unavailable = ensureGamesSystemReady();
+    if (unavailable) {
+      return unavailable;
+    }
+    if (!context.remoteJid?.endsWith('@g.us')) {
+      return null;
+    }
+    const enabled = await gamesToggleService.isEnabled(context.remoteJid);
+    if (!enabled) {
+      return {
+        text: '🎮 I minigiochi sono disattivati in questo gruppo. Un admin può riattivarli con !games on.'
+      };
+    }
+    return null;
+  };
+
+  const GAME_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
+
+  const buildGameCard = ({ title = '🎮 Bagley Games', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+    const payload = [title, GAME_CARD_DIVIDER];
+    for (const line of lines) {
+      if (typeof line === 'string' && line.trim()) {
+        payload.push(line);
+      }
+    }
+    payload.push(GAME_CARD_DIVIDER);
+    if (footer) {
+      payload.push(footer);
+    }
+    return payload.join('\n');
+  };
+
+  const gameResponse = (title, lines, { footer, mentions } = {}) => {
+    const payload = {
+      text: buildGameCard({ title, lines, footer })
+    };
+    if (Array.isArray(mentions) && mentions.length) {
+      payload.mentions = Array.from(new Set(mentions.filter(Boolean)));
+    }
+    return payload;
+  };
+
+  const OSINT_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
+
+  const buildOsintCard = ({ title = '🕵️ Bagley OSINT', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+    const payload = [title, OSINT_CARD_DIVIDER];
+    const list = Array.isArray(lines) ? lines : [lines];
+    for (const line of list) {
+      if (typeof line === 'string' && line.trim()) {
+        payload.push(line);
+      }
+    }
+    payload.push(OSINT_CARD_DIVIDER);
+    if (footer) {
+      payload.push(footer);
+    }
+    return payload.join('\n');
+  };
+
+  const osintResponse = (lines, { title, footer, mentions } = {}) => {
+    const payload = {
+      text: buildOsintCard({ title, lines, footer })
+    };
+    if (Array.isArray(mentions) && mentions.length) {
+      payload.mentions = Array.from(new Set(mentions.filter(Boolean)));
+    }
+    return payload;
+  };
+
+  const summarizeOsintRequest = (requestField) => {
+    if (!requestField) {
+      return 'n/d';
+    }
+    const collect = (value) => {
+      if (Array.isArray(value)) {
+        return value;
+      }
+      if (typeof value === 'string' && value.includes('\n')) {
+        return value.split(/\r?\n/);
+      }
+      return typeof value === 'string' ? [value] : [];
+    };
+    const list = collect(requestField)
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+      .filter(Boolean);
+    if (!list.length) {
+      return 'n/d';
+    }
+    if (list.length === 1) {
+      return list[0];
+    }
+    const preview = list.slice(0, 2).join(' • ');
+    const extra = list.length - 2;
+    return extra > 0 ? `${preview} • +${extra} altre` : preview;
+  };
+
+  const formatOsintDatasets = (datasetMap, { maxSources = 3, maxRecords = 3 } = {}) => {
+    if (!datasetMap || typeof datasetMap !== 'object') {
+      return ['⚠️ Nessun dataset disponibile nei risultati ricevuti.'];
+    }
+
+    const entries = Object.entries(datasetMap);
+    if (!entries.length) {
+      return ['⚠️ Nessun database ha restituito dati per questa ricerca.'];
+    }
+
+    const lines = [];
+    const considered = entries.slice(0, maxSources);
+    for (const [name, payload] of considered) {
+      const safeName = typeof name === 'string' ? name : 'Archivio sconosciuto';
+      const infoLeak = typeof payload?.InfoLeak === 'string' ? payload.InfoLeak.trim() : '';
+      const records = Array.isArray(payload?.Data) ? payload.Data : [];
+
+      if (safeName.toLowerCase().includes('no results')) {
+        lines.push('⚠️ Nessun match nei database pubblici per questa richiesta.');
+        continue;
+      }
+
+      lines.push(`📂 ${safeName}`);
+      if (infoLeak) {
+        lines.push(`   ${infoLeak}`);
+      }
+
+      if (!records.length) {
+        lines.push('   Nessun record strutturato disponibile.');
+        lines.push('');
+        continue;
+      }
+
+      const limitedRecords = records.slice(0, maxRecords);
+      for (const record of limitedRecords) {
+        const fields = Object.entries(record || {})
+          .filter(([, value]) => value !== undefined && value !== null && String(value).trim())
+          .map(([key, value]) => `${key}: ${String(value).trim()}`);
+        lines.push(`   • ${fields.join(' • ') || 'Record senza campi leggibili.'}`);
+      }
+
+      if (records.length > limitedRecords.length) {
+        lines.push(`   • … +${records.length - limitedRecords.length} record aggiuntivi.`);
+      }
+
+      lines.push('');
+    }
+
+    if (entries.length > considered.length) {
+      lines.push(`📌 ...e altri ${entries.length - considered.length} archivi disponibili. Raffina la query per visualizzarli tutti.`);
+    }
+
+    return lines;
+  };
+
+  const PING_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
+
+  const buildPingCard = ({ title = '📡 Bagley Monitor', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+    const payload = [title, PING_CARD_DIVIDER];
+    for (const line of lines) {
+      if (typeof line === 'string' && line.trim()) {
+        payload.push(line);
+      }
+    }
+    payload.push(PING_CARD_DIVIDER);
+    if (footer) {
+      payload.push(footer);
+    }
+    return payload.join('\n');
+  };
+
+  const formatBytesMb = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
+  const formatDuration = (seconds) => {
+    const units = [
+      { label: 'giorni', value: 86400 },
+      { label: 'ore', value: 3600 },
+      { label: 'minuti', value: 60 },
+      { label: 'secondi', value: 1 }
+    ];
+    const parts = [];
+    let remaining = Math.floor(seconds);
+    for (const unit of units) {
+      if (remaining >= unit.value) {
+        const qty = Math.floor(remaining / unit.value);
+        remaining -= qty * unit.value;
+        parts.push(`${qty} ${unit.label}`);
+        if (parts.length === 2) {
+          break;
+        }
+      }
+    }
+    return parts.length ? parts.join(' ') : 'meno di 1 secondo';
+  };
+
+  const GREET_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
+
+  const buildGreetCard = ({ title = '👋 Sistema Greet', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+    const payload = [title, GREET_CARD_DIVIDER];
+    for (const line of lines) {
+      if (typeof line === 'string' && line.trim()) {
+        payload.push(line);
+      }
+    }
+    payload.push(GREET_CARD_DIVIDER);
+    if (footer) {
+      payload.push(footer);
+    }
+    return payload.join('\n');
+  };
+
+  const greetResponse = (lines, { footer } = {}) => ({
+    text: buildGreetCard({ lines: Array.isArray(lines) ? lines : [lines], footer })
+  });
+
+  const MARKET_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
+
+  const buildMarketCard = ({ title = '📈 Bagley Market', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+    const payload = [title, MARKET_CARD_DIVIDER];
+    for (const line of lines) {
+      if (typeof line === 'string' && line.trim()) {
+        payload.push(line);
+      }
+    }
+    payload.push(MARKET_CARD_DIVIDER);
+    if (footer) {
+      payload.push(footer);
+    }
+    return payload.join('\n');
+  };
+
+  const marketResponse = (lines, { footer } = {}) => ({
+    text: buildMarketCard({ lines: Array.isArray(lines) ? lines : [lines], footer })
+  });
+
+  const buildInventoryCard = ({ title = '🎒 Inventario', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+    const payload = [title, MARKET_CARD_DIVIDER];
+    for (const line of lines) {
+      if (typeof line === 'string' && line.trim()) {
+        payload.push(line);
+      }
+    }
+    payload.push(MARKET_CARD_DIVIDER);
+    if (footer) {
+      payload.push(footer);
+    }
+    return payload.join('\n');
+  };
+
+  const inventoryResponse = (lines, { footer } = {}) => ({
+    text: buildInventoryCard({ lines: Array.isArray(lines) ? lines : [lines], footer })
+  });
+
+  const formatPrice = (price) => {
+    if (price >= 1000000000) {
+      return `฿${(price / 1000000000).toFixed(1)}B`;
+    } else if (price >= 1000000) {
+      return `฿${(price / 1000000).toFixed(1)}M`;
+    } else if (price >= 1000) {
+      return `฿${(price / 1000).toFixed(1)}K`;
+    } else {
+      return `฿${price.toFixed(2)}`;
+    }
+  };
+
+  const formatChange = (changePercent) => {
+    const sign = changePercent >= 0 ? '+' : '';
+    const color = changePercent >= 0 ? '🟢' : '🔴';
+    return `${color} ${sign}${changePercent.toFixed(2)}%`;
+  };
+
+  const downloadImageBuffer = async (url, { timeoutMs = 10000 } = {}) => {
+    if (typeof url !== 'string' || !url.trim()) {
+      return null;
+    }
+    const normalizedUrl = url.startsWith('//') ? `https:${url}` : url;
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId =
+      controller && timeoutMs
+        ? setTimeout(() => controller.abort(), timeoutMs)
+        : null;
+    try {
+      const response = await fetch(normalizedUrl, {
+        signal: controller?.signal,
+        headers: {
+          'user-agent': 'BagleyBot/1.0 (+https://github.com/thelegionl/bagley)'
+        }
+      });
+      if (!response.ok) {
+        logger?.debug?.({ status: response.status, url: normalizedUrl }, 'Cover download HTTP error');
+        return null;
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } catch (error) {
+      logger?.debug?.({ err: error, url: normalizedUrl }, 'Impossibile scaricare una copertina per il collage');
+      return null;
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  };
+
+  const buildGridCollage = async (items, { columns = 3, maxItems = 9, gap = 12, cellSize = 320, background = '#050505' } = {}) => {
+    const candidates = items
+      .map((item) => (item && typeof item.image === 'string' ? item.image.trim() : null))
+      .filter(Boolean)
+      .slice(0, maxItems);
+    if (!candidates.length) {
+      return { buffer: null, coversUsed: 0, reason: 'no-images' };
+    }
+
+    const prepared = [];
+    for (const imageUrl of candidates) {
+      const buffer = await downloadImageBuffer(imageUrl);
+      if (!buffer) {
+        continue;
+      }
+      try {
+        const resized = await imageLib.resizeBuffer(buffer, cellSize, cellSize, { fit: 'cover' });
+        prepared.push(resized);
+      } catch (error) {
+        logger?.debug?.({ err: error }, 'Impossibile ridimensionare una copertina per il collage');
+      }
+    }
+
+    if (!prepared.length) {
+      return { buffer: null, coversUsed: 0, reason: 'no-covers' };
+    }
+
+    const count = prepared.length;
+    const rows = Math.ceil(count / columns);
+    const width = gap * (columns + 1) + cellSize * columns;
+    const height = gap * (rows + 1) + cellSize * rows;
+
+    const composites = prepared.map((input, index) => {
+      const row = Math.floor(index / columns);
+      const col = index % columns;
+      const left = gap + col * (cellSize + gap);
+      const top = gap + row * (cellSize + gap);
+      return { input, top, left };
+    });
+
+    const buffer = await imageLib.compositeCanvas(width, height, background, composites);
+    return { buffer, coversUsed: count, reason: null };
+  };
+
+  const parseAmountValue = (raw) => {
+    if (typeof raw !== 'string') {
+      return null;
+    }
+    const cleaned = raw.replace(/[^\d.-]/g, '');
+    if (!cleaned.trim()) {
+      return null;
+    }
+    const parsed = Math.floor(Math.abs(Number(cleaned)));
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  };
+
+  const stripTargetArgFromList = (list, targetInfo) => {
+    if (!Array.isArray(list) || !targetInfo) {
+      return list;
+    }
+    const args = [...list];
+    if (targetInfo.source === 'arg' && typeof targetInfo.argIndex === 'number') {
+      args.splice(targetInfo.argIndex, 1);
+    } else if (targetInfo.source === 'mention') {
+      const mentionIndex = args.findIndex((value) => typeof value === 'string' && value.includes('@'));
+      if (mentionIndex >= 0) {
+        args.splice(mentionIndex, 1);
+      }
+    }
+    return args;
+  };
+
+  const normalizeCoinChoice = (raw) => {
+    if (typeof raw !== 'string') {
+      return null;
+    }
+    const value = raw.trim().toLowerCase();
+    if (!value) {
+      return null;
+    }
+    if (['testa', 't', 'head', 'heads', 'front'].includes(value)) {
+      return 'testa';
+    }
+    if (['croce', 'c', 'tail', 'tails', 'retro', 'croci'].includes(value)) {
+      return 'croce';
+    }
+    return null;
+  };
+
+  const coinLabel = (value) => (value === 'testa' ? '🪙 Testa' : '🪙 Croce');
+  const randomCoinResult = () => (Math.random() < 0.5 ? 'testa' : 'croce');
+
+  const fetchProfilePictureUrl = async (jid) => {
+    const normalized = normalizeJid(jid);
+    if (!normalized || typeof sock?.profilePictureUrl !== 'function') {
+      return null;
+    }
+    const variants = ['image', 'preview'];
+    for (const variant of variants) {
+      try {
+        const url = await sock.profilePictureUrl(normalized, variant);
+        if (url) {
+          return url;
+        }
+      } catch (error) {
+        const statusCode = error?.output?.statusCode || error?.statusCode || error?.status || error?.code;
+        if (Number(statusCode) === 404) {
+          continue;
+        }
+        logger?.debug?.({ err: error, targetJid: normalized, variant }, 'Impossibile recuperare la foto profilo');
+      }
+    }
+    return null;
   };
 
   async function participantsUpdateCommand(context, config) {
@@ -1642,6 +2311,15 @@ const resolveSingleCommandTarget = (context) => {
   }
 
   const commandList = [
+        {
+          name: 'giveaway',
+          usage: 'giveaway',
+          minLevel: PermissionLevel.MEMBER, // Grado 0
+          description: 'Prossimamente: giveaway e premi random!',
+          handler: async (context) => {
+            return { text: 'In arrivo...' };
+          }
+        },
     {
       name: 'help',
       usage: 'help',
@@ -1657,29 +2335,381 @@ const resolveSingleCommandTarget = (context) => {
       minLevel: PermissionLevel.ADMIN,
       description: 'Cancella il messaggio citato tramite eliminazione da parte del bot.',
       handler: async (context) => {
+        const wrap = (payload) => ({ ...payload, skipQuotedMedia: true });
         if (!context.remoteJid?.endsWith('@g.us')) {
-          return { text: 'Il comando del funziona solo nei gruppi.' };
+          return wrap({ text: 'Il comando del funziona solo nei gruppi.' });
         }
 
         const { contextInfo } = extractQuotedMessageInfo(context);
         if (!contextInfo?.stanzaId) {
-          return { text: 'Rispondi al messaggio che vuoi cancellare e poi usa !del.' };
+          return wrap({ text: 'Rispondi al messaggio che vuoi cancellare e poi usa !del.' });
         }
 
+        const participant = contextInfo.participant || undefined;
+        const fromMe = Boolean(participant && isBotSelf(participant, collectBotCandidates(context)));
         const deleteKey = {
           id: contextInfo.stanzaId,
           remoteJid: context.remoteJid,
-          participant: contextInfo.participant || undefined,
-          fromMe: false
+          participant,
+          fromMe
         };
 
         try {
           await sock.sendMessage(context.remoteJid, { delete: deleteKey });
-          return { text: 'Tranquillo fratello ho cancellato quella cagata.' };
+          return wrap({ text: 'Tranquillo fratello ho cancellato quella cagata.' });
         } catch (error) {
           logger?.warn({ err: error, deleteKey }, 'Impossibile cancellare il messaggio con !del');
-          return { text: 'Non sono riuscito a cancellarlo. Verifica che io sia admin.' };
+          return wrap({ text: 'Non sono riuscito a cancellarlo. Verifica che io sia admin.' });
         }
+      }
+    },
+    {
+      name: 'rep',
+      usage: 'rep <descrizione del problema>',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Invia un bug report all\'owner corredato da suggerimenti AI.',
+      handler: async (context) => {
+        const ownerJid = normalizeJid(permissionService.getOwnerJid());
+        if (!ownerJid) {
+          return {
+            text: 'Non riesco a trovare l\'owner configurato. Controlla config/owner.json.'
+          };
+        }
+
+        const details = context.parsed?.args?.join(' ').trim();
+        if (!details) {
+          return {
+            text: 'Spiegami cosa non funziona: usa !rep seguito da una breve descrizione del bug.'
+          };
+        }
+
+        const lines = [];
+        const reporterLabel = await buildMentionLabel(context.senderJid, context);
+        const origin = context.remoteJid?.endsWith('@g.us')
+          ? `Gruppo: ${context.groupMetadata?.subject || context.remoteJid}`
+          : 'Chat privata';
+
+        lines.push(`Nuovo bug report da ${reporterLabel}`, `Origine: ${origin}`, `Descrizione:\n${details}`);
+
+        let aiInsight = null;
+        if (aiService?.enabled && typeof aiService.generateReply === 'function') {
+          try {
+            aiInsight = await aiService.generateReply({
+              messageText: `Analizza questo bug riportato e suggerisci possibili fix o log da consultare:\n${details}`,
+              authorName: reporterLabel,
+              chatName: 'BugReport',
+              threadSummary: null,
+              chatId: `bug-report-${Date.now()}`
+            });
+          } catch (error) {
+            logger?.warn({ err: error }, 'Impossibile generare il suggerimento AI per !rep');
+          }
+        }
+
+        if (aiInsight) {
+          lines.push(`Suggerimento AI:\n${aiInsight}`);
+        } else {
+          lines.push('Suggerimento AI: non disponibile (servizio disattivato).');
+        }
+
+        lines.push('Log automatici: nessun errore fornito automaticamente.');
+
+        try {
+          await sock.sendMessage(ownerJid, {
+            text: lines.join('\n\n'),
+            mentions: [context.senderJid]
+          });
+        } catch (error) {
+          logger?.warn({ err: error, ownerJid }, 'Impossibile inoltrare il bug report all\'owner');
+          return {
+            text: 'Non sono riuscito a consegnare il report all\'owner. Riprova tra poco.'
+          };
+        }
+
+        return {
+          text: 'Report consegnato all\'owner. Ti farò sapere appena ho novità.',
+          skipQuotedMedia: true
+        };
+      }
+    },
+    {
+      name: 'account',
+      usage: 'account <crea|elimina>',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Gestisce il tuo conto BagleyBank.',
+      handler: async (context) => {
+        const bankUnavailable = ensureBankReady();
+        if (bankUnavailable) {
+          return bankUnavailable;
+        }
+        const action = context.parsed.args[0]?.toLowerCase();
+        const senderJid = normalizeJid(context.senderJid);
+        if (!senderJid) {
+          return bankError('Non riesco a identificare il tuo numero.');
+        }
+        const holderLabel = await buildMentionLabel(context.senderJid, context);
+        if (action === 'crea') {
+          const result = await bankService.createAccount(senderJid);
+          if (result.error) {
+            return bankError(result.error);
+          }
+          return bankResponse(
+            '🎉 Nuovo conto aperto',
+            [
+              `👤 Titolare: ${holderLabel}`,
+              `💰 Saldo iniziale: ${formatBankAmount(result.account.balance)}`,
+              '💎 Bonus di benvenuto depositato automaticamente.'
+            ],
+            { mentions: [context.senderJid] }
+          );
+        }
+        if (action === 'elimina') {
+          await bankService.settleAccount(senderJid);
+          const account = await bankService.getAccount(senderJid);
+          if (!account) {
+            return bankError('Non hai nessun conto da eliminare. Usa prima !account crea.');
+          }
+          if (account.loan) {
+            return bankError('Estingui prima il prestito attivo, poi elimina il conto.');
+          }
+          const outcome = await bankService.deleteAccount(senderJid);
+          if (outcome.error) {
+            return bankError(outcome.error);
+          }
+          return bankResponse(
+            '🗑️ Conto eliminato',
+            [
+              `👤 Titolare: ${holderLabel}`,
+              '📦 Storico transazioni rimosso con successo.',
+              'Puoi riaprire tutto quando vuoi con `!account crea`.'
+            ],
+            { mentions: [context.senderJid], footer: '👋 A presto da BagleyBank' }
+          );
+        }
+        return bankResponse("ℹ️ Scegli un'azione", [
+          'Usa `!account crea` per aprire un conto.',
+          'Usa `!account elimina` per chiuderlo definitivamente.'
+        ]);
+      }
+    },
+    {
+      name: 'saldo',
+      usage: 'saldo',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Mostra il saldo e la situazione dei prestiti BagleyBank.',
+      handler: async (context) => {
+        const bankUnavailable = ensureBankReady();
+        if (bankUnavailable) {
+          return bankUnavailable;
+        }
+        const senderJid = normalizeJid(context.senderJid);
+        if (!senderJid) {
+          return bankError('Non riesco a identificare il tuo numero.');
+        }
+        await bankService.settleAccount(senderJid);
+        const account = await bankService.getAccount(senderJid);
+        if (!account) {
+          return bankError('Non hai un conto BagleyBank. Aprilo con `!account crea`.');
+        }
+        const holderLabel = await buildMentionLabel(context.senderJid, context);
+        const lines = [
+          `👤 Titolare: ${holderLabel}`,
+          `💼 Saldo attuale: ${formatBankAmount(account.balance)}`
+        ];
+        if (account.createdAt) {
+          lines.push(`🗓️ Conto aperto il: ${formatBankDate(account.createdAt)}`);
+        }
+        lines.push(...buildLoanLines(account.loan));
+        return bankResponse('📊 Situazione conto', lines, { mentions: [context.senderJid] });
+      }
+    },
+    {
+      name: 'dona',
+      usage: 'dona <utente> <importo>',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Trasferisce fondi dal tuo conto BagleyBank a un altro utente.',
+      handler: async (context) => {
+        const bankUnavailable = ensureBankReady();
+        if (bankUnavailable) {
+          return bankUnavailable;
+        }
+        const senderJid = normalizeJid(context.senderJid);
+        if (!senderJid) {
+          return bankError('Non riesco a identificare il tuo numero.');
+        }
+        const targetInfo = resolveSingleCommandTarget(context);
+        const argsWithoutTarget = stripTargetArgFromList(context.parsed.args || [], targetInfo);
+        const amountArg = argsWithoutTarget.pop();
+        const amount = parseAmountValue(amountArg);
+        if (!targetInfo?.jid) {
+          return bankError('Specifica a chi vuoi fare la donazione (menzione, numero o risposta).');
+        }
+        if (!amount) {
+          return bankError('Indica l\'importo da donare (es. `!dona @utente 250`).');
+        }
+        await bankService.settleAccount(senderJid);
+        await bankService.settleAccount(targetInfo.jid);
+        const transfer = await bankService.transfer(senderJid, targetInfo.jid, amount);
+        if (transfer.error) {
+          return bankError(transfer.error);
+        }
+        const senderLabel = await buildMentionLabel(context.senderJid, context);
+        const targetLabel = await buildMentionLabel(targetInfo.jid, context);
+        const lines = [
+          `🤝 ${senderLabel} ➜ ${targetLabel}`,
+          `💸 Importo inviato: ${formatBankAmount(amount)}`,
+          `💼 Il tuo saldo ora e: ${formatBankAmount(transfer.from.balance)}`,
+          `📥 Saldo di ${targetLabel}: ${formatBankAmount(transfer.to.balance)}`
+        ];
+        return bankResponse('🎁 Donazione completata', lines, {
+          mentions: [context.senderJid, targetInfo.jid],
+          footer: '💌 Grazie per aver condiviso il wealth!'
+        });
+      }
+    },
+    {
+      name: 'aumento',
+      usage: 'aumento <utente|me> <importo>',
+      minLevel: PermissionLevel.ADMIN,
+      description: 'Aumenta il saldo di un account BagleyBank.',
+      handler: async (context) => {
+        const bankUnavailable = ensureBankReady();
+        if (bankUnavailable) {
+          return bankUnavailable;
+        }
+        const args = [...context.parsed.args];
+        let targetJid = null;
+        if (args[0]?.toLowerCase() === 'me') {
+          args.shift();
+          targetJid = normalizeJid(context.senderJid);
+        }
+        const targetInfo = targetJid ? null : resolveSingleCommandTarget(context);
+        if (!targetJid && targetInfo?.jid) {
+          targetJid = targetInfo.jid;
+          const filtered = stripTargetArgFromList(args, targetInfo);
+          args.length = 0;
+          args.push(...filtered);
+        }
+        if (!targetJid && args.length) {
+          const normalized = normalizeJid(args.shift());
+          if (normalized) {
+            targetJid = normalized;
+          }
+        }
+        const amountArg = args.shift();
+        const amount = parseAmountValue(amountArg);
+        if (!targetJid) {
+          return bankError('Specifica quale account vuoi aumentare (me, menzione o numero).');
+        }
+        if (!amount) {
+          return bankError('Indica l\'importo da aggiungere (es. `!aumento me 1000`).');
+        }
+        await bankService.settleAccount(targetJid);
+        const result = await bankService.adjustBalance(targetJid, amount);
+        if (result.error) {
+          return bankError(result.error);
+        }
+        const label = await buildMentionLabel(targetJid, context);
+        const operatorLabel = await buildMentionLabel(context.senderJid, context);
+        return bankResponse(
+          '📈 Saldo aggiornato',
+          [
+            `👤 Beneficiario: ${label}`,
+            `🚀 Bonus accreditato: ${formatBankAmount(amount)}`,
+            `💼 Nuovo saldo: ${formatBankAmount(result.account.balance)}`,
+            `🛠️ Operatore: ${operatorLabel}`
+          ],
+          { mentions: [targetJid, context.senderJid] }
+        );
+      }
+    },
+    {
+      name: 'prestito',
+      usage: 'prestito <importo>',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Richiede un prestito BagleyBank con interesse variabile.',
+      handler: async (context) => {
+        const bankUnavailable = ensureBankReady();
+        if (bankUnavailable) {
+          return bankUnavailable;
+        }
+        const amount = parseAmountValue(context.parsed.args[0]);
+        if (!amount) {
+          return bankError('Indica quanto vuoi richiedere (es. `!prestito 2500`).');
+        }
+        const senderJid = normalizeJid(context.senderJid);
+        if (!senderJid) {
+          return bankError('Non riesco a identificare il tuo numero.');
+        }
+        await bankService.settleAccount(senderJid);
+        const account = await bankService.getAccount(senderJid);
+        if (!account) {
+          return bankError('Apri prima un conto BagleyBank con `!account crea`.');
+        }
+        const result = await bankService.grantLoan(senderJid, amount);
+        if (result.error) {
+          return bankError(result.error);
+        }
+        const loanInfo = result.account.loan;
+        return bankResponse(
+          '✅ Prestito attivato',
+          [
+            `💵 Somma erogata: ${formatBankAmount(loanInfo.principal)}`,
+            `📈 Interesse applicato: ${loanInfo.interestRate}%`,
+            `🧾 Totale da restituire: ${formatBankAmount(loanInfo.totalDue)} (12 rate giornaliere)`,
+            `💳 Rata giornaliera: ${formatBankAmount(loanInfo.installmentAmount)}`,
+            `⏰ Prossimo addebito automatico: ${formatBankDate(loanInfo.nextDebitAt)}`,
+            '💡 Usa !paga per estinguere manualmente in qualsiasi momento.'
+          ],
+          { mentions: [context.senderJid] }
+        );
+      }
+    },
+    {
+      name: 'paga',
+      usage: 'paga <importo>',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Versa una quota per estinguere prima il tuo prestito BagleyBank.',
+      handler: async (context) => {
+        const bankUnavailable = ensureBankReady();
+        if (bankUnavailable) {
+          return bankUnavailable;
+        }
+        const amount = parseAmountValue(context.parsed.args[0]);
+        if (!amount) {
+          return bankError('Indica quanto vuoi versare (es. `!paga 500`).');
+        }
+        const senderJid = normalizeJid(context.senderJid);
+        if (!senderJid) {
+          return bankError('Non riesco a identificare il tuo numero.');
+        }
+        await bankService.settleAccount(senderJid);
+        const account = await bankService.getAccount(senderJid);
+        if (!account) {
+          return bankError('Apri prima un conto BagleyBank con `!account crea`.');
+        }
+        if (!account.loan) {
+          return bankError('Non hai prestiti attivi da estinguere.');
+        }
+        if (account.balance < amount) {
+          return bankError('Saldo insufficiente per effettuare il pagamento richiesto.');
+        }
+        const result = await bankService.applyManualPayment(senderJid, amount);
+        if (result.error) {
+          return bankError(result.error);
+        }
+        const remainingLoan = result.account.loan?.remaining;
+        const lines = [
+          `💳 Pagamento manuale: ${formatBankAmount(amount)}`,
+          `💼 Saldo conto aggiornato: ${formatBankAmount(result.account.balance)}`
+        ];
+        if (remainingLoan) {
+          lines.push(`📉 Residuo prestito: ${formatBankAmount(remainingLoan)}`);
+          lines.push(`⏰ Prossimo addebito: ${formatBankDate(result.account.loan.nextDebitAt)}`);
+        } else {
+          lines.push('🎉 Prestito completamente estinto. Complimenti!');
+        }
+        return bankResponse('💸 Pagamento registrato', lines, { mentions: [context.senderJid] });
       }
     },
     {
@@ -1688,7 +2718,7 @@ const resolveSingleCommandTarget = (context) => {
       minLevel: PermissionLevel.MEMBER,
       description: 'Mostra il tuo livello di permessi.',
       handler: async (context) => ({
-        text: `Il tuo grado Ã¨: ${PermissionLabels[context.permissionLevel]} (${context.permissionLevel}).`
+        text: `Il tuo grado è: ${PermissionLabels[context.permissionLevel]} (${context.permissionLevel}).`
       })
     },
     {
@@ -1782,29 +2812,25 @@ const resolveSingleCommandTarget = (context) => {
           return { text: 'Non ci sono amministratori registrati in questo gruppo. Greve zi' };
         }
 
-        const lines = ['🥷 Dettagli amministrazione gruppo:', ''];
-        const mentions = new Set();
+        const lines = ['Dettagli amministrazione gruppo:', ''];
 
         let index = 1;
         for (const jid of admins) {
           const label = await buildMentionLabel(jid, context);
           const role = founder && jid === founder ? ' (Fondatore)' : '';
           lines.push(`${index}. ${label}${role}`);
-          mentions.add(jid);
           index += 1;
         }
 
         if (!founder) {
-          lines.push('', '🤡 Founder: non identificato (nessun superadmin rilevato).');
+          lines.push('', 'Founder: non identificato (nessun superadmin rilevato).');
         } else if (!admins.includes(founder)) {
           const founderLabel = await buildMentionLabel(founder, context);
-          lines.push('', `👑 Fondatore: ${founderLabel}`);
-          mentions.add(founder);
+          lines.push('', `Fondatore: ${founderLabel}`);
         }
 
         return {
-          text: lines.join('\n'),
-          mentions: mentions.size ? [...mentions] : undefined
+          text: lines.join('\n')
         };
       }
     },
@@ -1895,19 +2921,25 @@ const resolveSingleCommandTarget = (context) => {
           const detailLines = [
             'Dettagli sistema:',
             `- Sistema: ${os.type()} ${os.release()} (${os.arch()})`,
-            `- Uptime: ${Math.floor(uptime / 60)} minuti`,
+            `- Uptime: ${formatDuration(uptime)}`,
             `- CPU load (1m): ${cpuLoad.toFixed(2)}`,
-            `- RAM usata: ${(usedMem / 1024 / 1024).toFixed(1)}MB / ${(totalMem / 1024 / 1024).toFixed(1)}MB`
+            `- RAM usata: ${formatBytesMb(usedMem)} / ${formatBytesMb(totalMem)}`
           ];
 
-          return { text: detailLines.join('\n') };
+          return {
+            text: buildPingCard({
+              title: '💻 System Stats',
+              lines: detailLines,
+              footer: 'ℹ️ Usa !ping per un check rapido'
+            })
+          };
         }
 
-        const text = ['🏓 Pong!', `- Latenza stimata: ${latency}ms`, `- Stato socket: ${status}`].join('\n');
+        const lines = ['🏓 Pong!', `- Latenza stimata: ${latency}ms`, `- Stato socket: ${status}`];
         return {
-          text,
+          text: buildPingCard({ lines }),
           buttons: [
-            { buttonId: '!ping', buttonText: { displayText: 'Rifai' }, type: 1 },
+            { buttonId: '!ping', buttonText: { displayText: 'Aggiorna' }, type: 1 },
             { buttonId: '!ping details', buttonText: { displayText: 'Dettagli' }, type: 1 }
           ],
           headerType: 1
@@ -2614,20 +3646,20 @@ const resolveSingleCommandTarget = (context) => {
       description: 'Collega il tuo profilo Last.fm al bot.',
       handler: async (context) => {
         if (!lastfmService) {
-          return { text: 'Il modulo Last.fm non è configurato su questa istanza.' };
+          return musicResponse('Il modulo Last.fm non è configurato su questa istanza.');
         }
 
         const username = context.parsed.args[0]?.trim();
         if (!username) {
-          return { text: 'Specifica il tuo nickname Last.fm: !setusr <nickname>.' };
+          return musicResponse('Specifica il tuo nickname Last.fm: !setusr <nickname>.');
         }
 
         try {
           const stored = await lastfmService.setUser(context.senderJid, username);
-          return { text: `Collegato Last.fm: ${stored}. Ora puoi usare !cur per mostrare cosa ascolti.` };
+          return musicResponse(`Collegato Last.fm: ${stored}. Ora puoi usare !cur per mostrare cosa ascolti.`);
         } catch (error) {
           logger?.warn({ err: error }, 'Impossibile salvare lo username Last.fm');
-          return { text: `Non riesco a salvare il nickname: ${error.message || error}` };
+          return musicResponse(`Non riesco a salvare il nickname: ${error.message || error}`);
         }
       }
     },
@@ -2638,10 +3670,10 @@ const resolveSingleCommandTarget = (context) => {
       description: 'Mostra cosa sta ascoltando ora l\'utente collegato a Last.fm.',
       handler: async (context) => {
         if (!lastfmService) {
-          return { text: 'Il modulo Last.fm non è configurato su questa istanza.' };
+          return musicResponse('Il modulo Last.fm non è configurato su questa istanza.');
         }
         if (!lastfmService.hasApiKey()) {
-          return { text: 'Configura la API key di Last.fm in config/lastfm.json o nella variabile LASTFM_API_KEY.' };
+          return musicResponse('Configura la API key di Last.fm in config/lastfm.json o nella variabile LASTFM_API_KEY.');
         }
 
         let targetJid = null;
@@ -2663,10 +3695,10 @@ const resolveSingleCommandTarget = (context) => {
 
         if (!username) {
           if (targetJid === normalizeJid(context.senderJid)) {
-            return { text: 'Non hai collegato un account. Usa prima !setusr <nickname>.' };
+            return musicResponse('Non hai collegato un account. Usa prima !setusr <nickname>.');
           }
           const label = await buildMentionLabel(targetJid, context);
-          return { text: `${label} non ha collegato un account Last.fm.`, mentions: [targetJid] };
+          return musicResponse(`${label} non ha collegato un account Last.fm.`, { mentions: [targetJid] });
         }
 
         let track;
@@ -2674,7 +3706,7 @@ const resolveSingleCommandTarget = (context) => {
           track = await lastfmService.getCurrentTrack(username);
         } catch (error) {
           logger?.warn({ err: error }, 'Errore durante la chiamata Last.fm');
-          return { text: `Last.fm non collabora: ${error.message || error}` };
+          return musicResponse(`Last.fm non collabora: ${error.message || error}`);
         }
 
         const mentionList = targetJid && !explicitUsername ? [targetJid] : undefined;
@@ -2686,7 +3718,7 @@ const resolveSingleCommandTarget = (context) => {
             `${label} non ha scrobble recenti.`,
             'Magari prova a riprodurre qualcosa e ripeti `!cur`.'
           ];
-          return { text: lines.join('\n'), mentions: mentionList };
+          return musicResponse(lines, { mentions: mentionList });
         }
 
 
@@ -2706,24 +3738,252 @@ const resolveSingleCommandTarget = (context) => {
             : '\n🎧 Ascolti personali: boh, che cazzo ne so';
         infoLines.push(playcountLine);
 
-        const caption = [header, ...infoLines].join('\n');
+        const baseCaption = [header, ...infoLines].join('\n');
 
         if (track.image) {
           return {
             messages: [
               {
                 image: { url: track.image },
-                caption,
+                caption: buildMusicCard(baseCaption),
                 mentions: mentionList
               }
             ]
           };
         }
 
-        return {
-          text: caption,
-          mentions: mentionList
-        };
+        return musicResponse(baseCaption, { mentions: mentionList });
+      }
+    },
+    {
+      name: 'topalbums',
+      usage: 'topalbums [@utente|nickname]',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Mostra i 9 album più ascoltati nell’ultimo mese su Last.fm.',
+      handler: async (context) => {
+        if (!lastfmService) {
+          return musicResponse('Il modulo Last.fm non è configurato su questa istanza.');
+        }
+        if (!lastfmService.hasApiKey()) {
+          return musicResponse('Configura la API key di Last.fm in config/lastfm.json o nella variabile LASTFM_API_KEY.');
+        }
+
+        let targetJid = null;
+        let explicitUsername = null;
+        const resolvedTarget = resolveSingleCommandTarget(context);
+        if (resolvedTarget.source === 'mention' || resolvedTarget.source === 'reply') {
+          targetJid = resolvedTarget.jid;
+        } else if (context.parsed.args.length) {
+          explicitUsername = context.parsed.args[0].trim();
+        }
+        if (!targetJid) {
+          targetJid = normalizeJid(context.senderJid);
+        }
+
+        let username = explicitUsername;
+        if (!username) {
+          username = await lastfmService.getUser(targetJid);
+        }
+
+        if (!username) {
+          if (targetJid === normalizeJid(context.senderJid)) {
+            return musicResponse('Non hai collegato un account. Usa prima !setusr <nickname>.');
+          }
+          const label = await buildMentionLabel(targetJid, context);
+          return musicResponse(`${label} non ha collegato un account Last.fm.`, { mentions: [targetJid] });
+        }
+
+        let albums;
+        try {
+          albums = await lastfmService.getTopAlbums(username, { limit: 9, period: '1month' });
+        } catch (error) {
+          logger?.warn({ err: error }, 'Errore durante il recupero dei top album da Last.fm');
+          return musicResponse(`Last.fm non collabora: ${error.message || error}`);
+        }
+
+        if (!albums?.length) {
+          return musicResponse('Non trovo album recenti per questo profilo nell’ultimo mese.');
+        }
+
+        const mentionList = targetJid && !explicitUsername ? [targetJid] : undefined;
+        const label =
+          explicitUsername || !targetJid ? username : await buildMentionLabel(targetJid, context);
+        const lines = albums.map((album, index) => {
+          const playcount =
+            typeof album.playcount === 'number'
+              ? `${album.playcount.toLocaleString('it-IT')} scrobble`
+              : 'scrobble non disponibili';
+          return `${index + 1}. ${album.name} — ${album.artist} (${playcount})`;
+        });
+
+        const summaryText = buildMusicCard(
+          [
+            `Profilo: ${label}`,
+            '\nPeriodo: Ultimi 30 giorni\n',
+            '',
+            ...lines
+          ],
+          { title: '🎧 Top Albums' }
+        );
+
+        const collageSources = albums.map((album) => ({
+          image: typeof album.image === 'string' ? album.image.trim() : null
+        }));
+
+        let collageBuffer = null;
+        let collageMeta = { coversUsed: 0, reason: 'not-attempted' };
+        if (collageSources.some((entry) => entry.image)) {
+          try {
+            collageMeta = await buildGridCollage(collageSources, { columns: 3, maxItems: 9 });
+            collageBuffer = collageMeta.buffer;
+          } catch (error) {
+            collageMeta = { coversUsed: 0, reason: 'collage-error' };
+            logger?.debug({ err: error }, 'Impossibile generare il collage album');
+          }
+        }
+
+        logger?.info(
+          {
+            command: 'topalbums',
+            collageReady: Boolean(collageBuffer),
+            collageCoverCount: collageMeta.coversUsed,
+            collageReason: collageMeta.reason,
+            albumCount: albums.length,
+            target: label
+          },
+          'TopAlbums collage generation completed'
+        );
+
+        if (collageBuffer) {
+          return {
+            messages: [
+              {
+                image: collageBuffer,
+                caption: summaryText,
+                mentions: mentionList
+              }
+            ],
+            consumesText: true
+          };
+        }
+
+        return { text: summaryText, mentions: mentionList };
+      }
+    },
+    {
+      name: 'topartists',
+      usage: 'topartists [@utente|nickname]',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Mostra i 9 artisti più ascoltati nell’ultimo mese su Last.fm.',
+      handler: async (context) => {
+        if (!lastfmService) {
+          return musicResponse('Il modulo Last.fm non è configurato su questa istanza.');
+        }
+        if (!lastfmService.hasApiKey()) {
+          return musicResponse('Configura la API key di Last.fm in config/lastfm.json o nella variabile LASTFM_API_KEY.');
+        }
+
+        let targetJid = null;
+        let explicitUsername = null;
+        const resolvedTarget = resolveSingleCommandTarget(context);
+        if (resolvedTarget.source === 'mention' || resolvedTarget.source === 'reply') {
+          targetJid = resolvedTarget.jid;
+        } else if (context.parsed.args.length) {
+          explicitUsername = context.parsed.args[0].trim();
+        }
+        if (!targetJid) {
+          targetJid = normalizeJid(context.senderJid);
+        }
+
+        let username = explicitUsername;
+        if (!username) {
+          username = await lastfmService.getUser(targetJid);
+        }
+
+        if (!username) {
+          if (targetJid === normalizeJid(context.senderJid)) {
+            return musicResponse('Non hai collegato un account. Usa prima !setusr <nickname>.');
+          }
+          const label = await buildMentionLabel(targetJid, context);
+          return musicResponse(`${label} non ha collegato un account Last.fm.`, { mentions: [targetJid] });
+        }
+
+        let artists;
+        try {
+          artists = await lastfmService.getTopArtists(username, { limit: 9, period: '1month' });
+        } catch (error) {
+          logger?.warn({ err: error }, 'Errore durante il recupero dei top artist da Last.fm');
+          return musicResponse(`Last.fm non collabora: ${error.message || error}`);
+        }
+
+        if (!artists?.length) {
+          return musicResponse('Non trovo artisti recenti per questo profilo nell’ultimo mese.');
+        }
+
+        const mentionList = targetJid && !explicitUsername ? [targetJid] : undefined;
+        const label =
+          explicitUsername || !targetJid ? username : await buildMentionLabel(targetJid, context);
+
+        const lines = artists.map((artist, index) => {
+          const playcount =
+            typeof artist.playcount === 'number'
+              ? `${artist.playcount.toLocaleString('it-IT')} scrobble`
+              : 'scrobble non disponibili';
+          return `${index + 1}. ${artist.name} (${playcount})`;
+        });
+
+        const summaryText = buildMusicCard(
+          [
+            `Profilo: ${label}`,
+            'Periodo: Ultimi 30 giorni\n',
+            '',
+            ...lines
+          ],
+          { title: '🎧 Top Artists' }
+        );
+
+        const collageSources = artists.map((artist) => ({
+          image: typeof artist.image === 'string' ? artist.image.trim() : null
+        }));
+
+        let collageBuffer = null;
+        let collageMeta = { coversUsed: 0, reason: 'not-attempted' };
+        if (collageSources.some((entry) => entry.image)) {
+          try {
+            collageMeta = await buildGridCollage(collageSources, { columns: 3, maxItems: 9 });
+            collageBuffer = collageMeta.buffer;
+          } catch (error) {
+            collageMeta = { coversUsed: 0, reason: 'artist-collage-error' };
+            logger?.debug({ err: error }, 'Impossibile generare il collage artisti');
+          }
+        }
+
+        logger?.info(
+          {
+            command: 'topartists',
+            collageReady: Boolean(collageBuffer),
+            collageCoverCount: collageMeta.coversUsed,
+            collageReason: collageMeta.reason,
+            artistCount: artists.length,
+            target: label
+          },
+          'TopArtists collage generation completed'
+        );
+
+        if (collageBuffer) {
+          return {
+            messages: [
+              {
+                image: collageBuffer,
+                caption: summaryText,
+                mentions: mentionList
+              }
+            ],
+            consumesText: true
+          };
+        }
+
+        return { text: summaryText, mentions: mentionList };
       }
     },
     {
@@ -2987,6 +4247,13 @@ ${item.url}`);
         }
 
         const callInfo = callManager.get(context.remoteJid);
+        if (process.env.CALL_DEBUG) {
+          try {
+            console.log('CALL_DEBUG endvc callInfo ->', JSON.stringify(callInfo));
+          } catch (e) {
+            console.log('CALL_DEBUG endvc callInfo -> (non-serializable)');
+          }
+        }
         if (!callInfo) {
           return { text: 'Non rilevo voice chat attive da terminare.' };
         }
@@ -3105,7 +4372,7 @@ ${item.url}`);
     {
       name: 'antinuke',
       usage: 'antinuke <on|off|status>',
-      minLevel: PermissionLevel.WHITELIST,
+      minLevel: PermissionLevel.ADMIN,
       description: 'Protegge il gruppo da comandi distruttivi come steal/abuse.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -3133,6 +4400,66 @@ ${item.url}`);
             ? '☢️ Antinuke attivato. Nessuno fa il figo.'
             : '⚠️ Antinuke disattivato. Diventerà possibilmente Oppenheimer.'
         };
+      }
+    },
+    {
+      name: 'antighost',
+      usage: 'antighost <on|off|status>',
+      minLevel: PermissionLevel.ADMIN,
+      description: 'Recupera i messaggi eliminati e li reinvia nel gruppo.',
+      handler: async (context) => {
+        if (!context.remoteJid?.endsWith('@g.us')) {
+          return { text: 'Il comando antighost funziona solo nei gruppi.' };
+        }
+        if (!antighostService) {
+          return { text: 'Il sistema antighost non è disponibile su questa istanza.' };
+        }
+        const mode = context.parsed.args[0]?.toLowerCase();
+        if (!mode || !['on', 'off', 'status'].includes(mode)) {
+          return { text: 'Dimmi se devo attivarlo, disattivarlo o mostrare lo stato: usa on, off oppure status.' };
+        }
+        if (mode === 'status') {
+          const enabled = await antighostService.isEnabled(context.remoteJid);
+          return { text: enabled ? '👻 Antighost attivo: recupero i messaggi eliminati.' : '👻 Antighost disattivato.' };
+        }
+        const enable = mode === 'on';
+        await antighostService.setState(context.remoteJid, enable);
+        return {
+          text: enable
+            ? '👻 Antighost attivato: ogni messaggio eliminato verrà ripubblicato. Vi guardo pure nelle mutande.'
+            : '👻 Antighost disattivato: smetto di farmi i cazzi vostriv ok.'
+        };
+      }
+    },
+    {
+      name: 'greet',
+      usage: 'greet <on|off|status>',
+      minLevel: PermissionLevel.ADMIN,
+      description: 'Gestisce i messaggi di benvenuto e addio automatici.',
+      handler: async (context) => {
+        if (!context.remoteJid?.endsWith('@g.us')) {
+          return greetResponse('Il comando greet funziona solo nei gruppi.');
+        }
+        if (!greetService) {
+          return greetResponse('Il sistema greet non è disponibile su questa istanza.');
+        }
+        const mode = context.parsed.args[0]?.toLowerCase();
+        if (!mode || !['on', 'off', 'status'].includes(mode)) {
+          return greetResponse('Dimmi se devo attivarlo, disattivarlo o mostrare lo stato: usa on, off oppure status.');
+        }
+        if (mode === 'status') {
+          const enabled = await greetService.isEnabled(context.remoteJid);
+          return greetResponse(
+            enabled ? '👋 Greet attivo: OH sto salutando si' : '👋 Greet disattivato: fanculo tutti non dico nulla.'
+          );
+        }
+        const enable = mode === 'on';
+        await greetService.setState(context.remoteJid, enable);
+        return greetResponse(
+          enable
+            ? '👋 Messaggi di benvenuto/addio attivati. Ora saluto tutti.'
+            : '👋 Messaggi di benvenuto/addio disattivati. Potete pure uscire non mi interessa...'
+        );
       }
     },
     {
@@ -3171,8 +4498,23 @@ ${item.url}`);
             checker: (service) => service?.isEnabled(context.remoteJid)
           },
           {
+            name: 'Antighost',
+            service: antighostService,
+            checker: (service) => service?.isEnabled(context.remoteJid)
+          },
+          {
+            name: 'Greet',
+            service: greetService,
+            checker: (service) => service?.isEnabled(context.remoteJid)
+          },
+          {
             name: 'AI Responses',
             service: aiToggleService,
+            checker: (service) => service?.isEnabled(context.remoteJid)
+          },
+          {
+            name: 'Games',
+            service: gamesToggleService,
             checker: (service) => service?.isEnabled(context.remoteJid)
           },
           {
@@ -3197,9 +4539,554 @@ ${item.url}`);
           }
         }
 
-        return {
-          text: ['Pannello sicurezza:', ...states].join('\n')
-        };
+        const divider = '━━━━━━━━━━━━━━━━━━━━';
+        const response = [
+          '🛡️ Control Room',
+          divider,
+          'Pannello sicurezza:',
+          ...states,
+          divider,
+          '⚙️ Usa i comandi dedicati per modificare ogni sistema.'
+        ];
+
+        return { text: response.join('\n') };
+      }
+    },
+    {
+      name: 'market',
+      usage: 'market [categoria] [oggetto]',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Sistema di trading di mercato Bagley.',
+      handler: async (context) => {
+        if (!marketService) {
+          return marketResponse('Il sistema di mercato non è disponibile.');
+        }
+
+        const args = context.parsed?.args || [];
+        const categoryId = args[0];
+        const itemName = args.slice(1).join(' ').toLowerCase().trim();
+
+        // !market list - mostra solo le categorie disponibili
+        if (categoryId && categoryId.toLowerCase() === 'list') {
+          const categories = marketService.getCategories();
+          const categoryList = Object.keys(categories)
+            .map(id => `${id}. ${categories[id].name}`)
+            .join('\n');
+
+          return marketResponse([
+            '📂 Categorie disponibili:',
+            '',
+            categoryList,
+            '',
+            '💡 Usa !market <numero_categoria> per esplorare'
+          ]);
+        }
+
+        // !market - Mostra trending items
+        if (!categoryId) {
+          const trendingItems = marketService.getTrendingItems(10);
+          if (!trendingItems.length) {
+            return marketResponse('Nessun oggetto disponibile sul mercato.');
+          }
+
+          const lines = [
+            '🔥 Oggetti di tendenza oggi:',
+            '',
+            ...trendingItems.map((item, index) =>
+              `${index + 1}. ${item.name}\n   ${formatPrice(item.currentPrice)} ${formatChange(item.changePercent)}`
+            ),
+            '',
+            '💡 Rispondi a questo messaggio con il numero dell\'oggetto per fare trading!'
+          ];
+
+          return marketResponse(lines);
+        }
+
+        // !market <categoria> - Mostra categoria o sottocategorie
+        const catId = parseInt(categoryId);
+        if (isNaN(catId) || !marketService.getCategories()[catId]) {
+          const categories = marketService.getCategories();
+          const categoryList = Object.keys(categories)
+            .map(id => `${id}. ${categories[id].name}`)
+            .join('\n');
+
+          return marketResponse([
+            '📂 Categorie disponibili:',
+            '',
+            categoryList,
+            '',
+            '💡 Usa !market <numero_categoria> per esplorare'
+          ]);
+        }
+
+        // mostro le sottocategorie se esistono e non è stato specificato ancora un oggetto
+        const subcats = marketService.getSubcategories(catId);
+        if (Object.keys(subcats).length > 0 && !itemName) {
+          const list = Object.keys(subcats)
+            .sort((a, b) => parseInt(a) - parseInt(b))
+            .map((id, idx) => `${idx + 1}. ${subcats[id].name}`)
+            .join('\n');
+          return marketResponse([
+            `🧩 Sottocategorie di ${marketService.getCategoryName(catId)}:`,
+            '',
+            list,
+            '',
+            '💡 Rispondi con il numero per vedere gli oggetti della sottocategoria'
+          ]);
+        }
+
+        // Se c'è un nome oggetto specifico, mostra info dettagliate
+        if (itemName) {
+          const categoryItems = marketService.getCategoryItems(catId);
+          const item = categoryItems.find(i =>
+            i.name.toLowerCase().includes(itemName) ||
+            i.itemId.toLowerCase().includes(itemName)
+          );
+
+          if (!item) {
+            return marketResponse(`Oggetto "${itemName}" non trovato nella categoria ${marketService.getCategoryName(catId)}.`);
+          }
+
+          const itemInfo = marketService.getItemInfo(item.categoryId, item.subId, item.itemId);
+          const lines = [
+            `📊 ${itemInfo.name}`,
+            '',
+            `💰 Prezzo attuale: ${formatPrice(itemInfo.currentPrice)}`,
+            `📈 Variazione: ${formatChange(itemInfo.changePercent)}`,
+            `🎯 Volatilità: ${itemInfo.volatility}`,
+            '',
+            `📝 ${itemInfo.description}`,
+            '',
+            '💡 Usa !buy <categoria> <oggetto> [quantità] per acquistare',
+            '💡 Usa !sell <categoria> <oggetto> [quantità] per vendere'
+          ];
+
+          return marketResponse(lines);
+        }
+
+        // Mostra sottocategorie della categoria selezionata
+        const categoryItems = marketService.getCategoryItems(catId, 10);
+        if (!categoryItems.length) {
+          return marketResponse(`Nessun oggetto disponibile nella categoria ${marketService.getCategoryName(catId)}.`);
+        }
+
+        const lines = [
+          `📂 ${marketService.getCategoryName(catId)}:`,
+          '',
+          ...categoryItems.map((item, index) =>
+            `${index + 1}. ${item.name}\n   ${formatPrice(item.currentPrice)} ${formatChange(item.changePercent)}`
+          ),
+          '',
+          '💡 Rispondi con il numero per info dettagliate!'
+        ];
+
+        return marketResponse(lines);
+      }
+    },
+    {
+      name: 'inventario',
+      usage: 'inventario',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Mostra il tuo inventario di mercato organizzato per categoria.',
+      handler: async (context) => {
+        if (!marketService) {
+          return inventoryResponse('Il sistema di mercato non è disponibile.');
+        }
+
+        const userInventory = marketService.getUserInventory(context.senderJid);
+        const items = Object.values(userInventory);
+
+        if (!items.length) {
+          return inventoryResponse([
+            '🎒 Il tuo inventario è vuoto!',
+            '',
+            '💡 Usa !market per esplorare gli oggetti disponibili',
+            '💡 Acquista oggetti con !buy <categoria> <oggetto> [quantità]'
+          ]);
+        }
+
+        // Raggruppa gli oggetti per categoria e sottocategoria
+        const grouped = {};
+        for (const item of items) {
+          const itemInfo = marketService.getItemInfo(item.categoryId, item.subId, item.itemId);
+          if (!itemInfo) continue;
+
+          const catId = item.categoryId;
+          const subId = item.subId;
+          const categoryName = marketService.getCategoryName(catId);
+          const subcategoryName = marketService.getSubcategoryName(catId, subId);
+
+          if (!grouped[categoryName]) {
+            grouped[categoryName] = {};
+          }
+          if (!grouped[categoryName][subcategoryName]) {
+            grouped[categoryName][subcategoryName] = [];
+          }
+          grouped[categoryName][subcategoryName].push({
+            info: itemInfo,
+            quantity: item.quantity,
+            totalInvested: item.totalInvested
+          });
+        }
+
+        let totalValue = 0;
+        let totalInvested = 0;
+
+        const lines = [
+          '🎒 Il tuo inventario:',
+          ''
+        ];
+
+        // Scorri le categorie
+        for (const categoryName in grouped) {
+          lines.push(`📂 ${categoryName}`);
+
+          // Scorri le sottocategorie
+          for (const subcategoryName in grouped[categoryName]) {
+            lines.push(`  📌 ${subcategoryName}`);
+
+            // Mostra gli oggetti della sottocategoria
+            const subcategoryItems = grouped[categoryName][subcategoryName];
+            subcategoryItems.forEach((item, index) => {
+              const currentValue = item.info.currentPrice * item.quantity;
+              const investedValue = item.totalInvested;
+              const profit = currentValue - investedValue;
+              const profitPercent = investedValue > 0 ? ((currentValue - investedValue) / investedValue) * 100 : 0;
+
+              totalValue += currentValue;
+              totalInvested += investedValue;
+
+              lines.push(
+                `    ${index + 1}. ${item.info.name} (${item.quantity}x)`,
+                `       Valore: ${formatPrice(currentValue)} - Profit: ${formatChange(profitPercent)} (${formatPrice(profit)})`
+              );
+            });
+
+            lines.push('');
+          }
+        }
+
+        const totalProfit = totalValue - totalInvested;
+        const totalProfitPercent = totalInvested > 0 ? ((totalValue - totalInvested) / totalInvested) * 100 : 0;
+
+        lines.push('');
+        lines.push(
+          '📊 Riepilogo portafoglio:',
+          `💰 Valore totale: ${formatPrice(totalValue)}`,
+          `💸 Investito: ${formatPrice(totalInvested)}`,
+          `📈 Profit totale: ${formatChange(totalProfitPercent)} (${formatPrice(totalProfit)})`
+        );
+
+        return inventoryResponse(lines);
+      }
+    },
+    {
+      name: 'buy',
+      usage: 'buy <categoria> <oggetto> [quantità]',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Acquista oggetti dal mercato.',
+      handler: async (context) => {
+        if (!marketService) {
+          return marketResponse('Il sistema di mercato non è disponibile.');
+        }
+
+        const args = context.parsed?.args || [];
+        if (args.length < 2) {
+          return marketResponse('Uso: !buy <categoria> <oggetto> [quantità]');
+        }
+
+        const categoryId = args[0];
+        const itemName = args[1].trim();
+        const quantity = args[2] ? parseInt(args[2]) : 1;
+
+        if (quantity <= 0) {
+          return marketResponse('Quantità non valida.');
+        }
+
+        const category = marketService.getCategories()[parseInt(categoryId)];
+        if (!category) {
+          return marketResponse(`Categoria ${categoryId} non trovata.`);
+        }
+
+        const item = marketService.findItemInCategory(categoryId, itemName);
+        if (!item) {
+          return marketResponse(`Oggetto "${itemName}" non trovato nella categoria ${category.name}.`);
+        }
+
+        const result = await marketService.buyItem(context.senderJid, item.categoryId, item.subId, item.itemId, quantity);
+
+        if (result.success) {
+          const account = await bankService.getAccount(context.senderJid);
+          const balance = account?.balance || 0;
+          return marketResponse([
+            '✅ Acquisto completato!',
+            '',
+            result.message,
+            '',
+            `📊 Nuovo saldo: ฿${balance.toLocaleString('it-IT')}`
+          ]);
+        } else {
+          return marketResponse(`❌ ${result.message}`);
+        }
+      }
+    },
+    {
+      name: 'sell',
+      usage: 'sell <categoria> <oggetto> [quantità] | sell all',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Vendi oggetti dal tuo inventario. Usa "!sell all" per vendere tutto.',
+      handler: async (context) => {
+        if (!marketService) {
+          return marketResponse('Il sistema di mercato non è disponibile.');
+        }
+
+        const args = context.parsed?.args || [];
+        // Nuova funzionalità: !sell all
+        if (args.length === 1 && args[0].toLowerCase() === 'all') {
+          const userInventory = marketService.getUserInventory(context.senderJid);
+          const itemKeys = Object.keys(userInventory);
+          if (itemKeys.length === 0) {
+            return marketResponse('Il tuo inventario è vuoto.');
+          }
+          let vendite = [];
+          let totale = 0;
+          for (const key of itemKeys) {
+            const item = userInventory[key];
+            if (item.quantity > 0) {
+              const result = await marketService.sellItem(context.senderJid, item.categoryId, item.subId, item.itemId, item.quantity);
+              if (result.success) {
+                vendite.push(`• ${item.quantity}x ${result.item.name} per ฿${result.totalRevenue?.toLocaleString('it-IT')}`);
+                totale += result.totalRevenue || 0;
+              }
+            }
+          }
+          const account = await bankService.getAccount(context.senderJid);
+          const balance = account?.balance || 0;
+          if (vendite.length === 0) {
+            return marketResponse('Non hai oggetti vendibili nel tuo inventario.');
+          }
+          return marketResponse([
+            '✅ Tutto venduto!',
+            '',
+            ...vendite,
+            '',
+            `Totale incassato: ฿${totale.toLocaleString('it-IT')}`,
+            `📊 Nuovo saldo: ฿${balance.toLocaleString('it-IT')}`
+          ]);
+        }
+
+        // Comando classico !sell <categoria> <oggetto> [quantità]
+        if (args.length < 2) {
+          return marketResponse('Uso: !sell <categoria> <oggetto> [quantità] | !sell all');
+        }
+
+        const categoryId = parseInt(args[0]);
+        const itemName = args[1].toLowerCase().trim();
+        const quantity = args[2] ? parseInt(args[2]) : 1;
+
+        if (isNaN(categoryId) || quantity <= 0) {
+          return marketResponse('Categoria o quantità non valida.');
+        }
+
+        const userInventory = marketService.getUserInventory(context.senderJid);
+        const itemKeys = Object.keys(userInventory);
+        const itemKey = itemKeys.find(key => {
+          const item = userInventory[key];
+          const itemInfo = marketService.getItemInfo(item.categoryId, item.subId, item.itemId);
+          return item.categoryId === categoryId &&
+                 (itemInfo?.name.toLowerCase().includes(itemName) ||
+                  item.itemId.toLowerCase().includes(itemName));
+        });
+
+        if (!itemKey) {
+          return marketResponse(`Oggetto "${itemName}" non trovato nel tuo inventario.`);
+        }
+
+        const inventoryItem = userInventory[itemKey];
+        if (inventoryItem.quantity < quantity) {
+          return marketResponse(`Hai solo ${inventoryItem.quantity} unità di questo oggetto.`);
+        }
+
+        const result = await marketService.sellItem(context.senderJid, inventoryItem.categoryId, inventoryItem.subId, inventoryItem.itemId, quantity);
+
+        if (result.success) {
+          const account = await bankService.getAccount(context.senderJid);
+          const balance = account?.balance || 0;
+          return marketResponse([
+            '✅ Vendita completata!',
+            '',
+            result.message,
+            '',
+            `📊 Nuovo saldo: ฿${balance.toLocaleString('it-IT')}`
+          ]);
+        } else {
+          return marketResponse(`❌ ${result.message}`);
+        }
+      }
+    },
+    {
+      name: 'regala',
+      usage: 'regala <@utente> <categoria> <oggetto> [quantità]',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Regala un oggetto a un altro utente.',
+      handler: async (context) => {
+        if (!marketService) {
+          return marketResponse('Il sistema di mercato non è disponibile.');
+        }
+
+        const args = context.parsed?.args || [];
+        if (args.length < 3) {
+          return marketResponse('Uso: !regala <@utente> <categoria> <oggetto> [quantità]');
+        }
+
+        const targetMention = args[0];
+        const categoryId = args[1];
+        const itemName = args[2].trim();
+        const quantity = args[3] ? parseInt(args[3]) : 1;
+
+        if (quantity <= 0) {
+          return marketResponse('Quantità non valida.');
+        }
+
+        // Estrai il JID dal mention (@user o numero)
+        let targetJid = null;
+        if (targetMention.startsWith('@')) {
+          const username = targetMention.slice(1);
+          const contactJids = context.contactCache ? Object.values(context.contactCache.getAll()).filter(c => c.name?.toLowerCase() === username.toLowerCase()) : [];
+          if (contactJids.length > 0) {
+            targetJid = contactJids[0].jid;
+          }
+        } else if (targetMention.match(/^\d+$/)) {
+          targetJid = targetMention + '@s.whatsapp.net';
+        }
+
+        if (!targetJid) {
+          return marketResponse('Utente non trovato. Usa !regala @nome o !regala numero');
+        }
+
+        const category = marketService.getCategories()[parseInt(categoryId)];
+        if (!category) {
+          return marketResponse(`Categoria ${categoryId} non trovata.`);
+        }
+
+        const item = marketService.findItemInCategory(categoryId, itemName);
+        if (!item) {
+          return marketResponse(`Oggetto "${itemName}" non trovato in tuo possesso.`);
+        }
+
+        const result = await marketService.giftItem(context.senderJid, targetJid, item.categoryId, item.subId, item.itemId, quantity);
+
+        if (result.success) {
+          return marketResponse([
+            '🎁 Dono completato!',
+            '',
+            result.message,
+            '',
+            `📦 ${quantity}x ${result.item.name} regalati a ${targetMention}`
+          ]);
+        } else {
+          return marketResponse(`❌ ${result.message}`);
+        }
+      }
+    },
+    {
+      name: 'vendiutente',
+      usage: 'vendiutente <@utente> <categoria> <oggetto> <prezzo> [quantità]',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Vendi un oggetto a un altro utente a prezzo concordato.',
+      handler: async (context) => {
+        if (!marketService || !bankService) {
+          return marketResponse('Il sistema di mercato o bancario non è disponibile.');
+        }
+
+        const args = context.parsed?.args || [];
+        if (args.length < 4) {
+          return marketResponse('Uso: !vendiutente <@utente> <categoria> <oggetto> <prezzo> [quantità]');
+        }
+
+        const targetMention = args[0];
+        const categoryId = args[1];
+        const itemName = args[2].trim();
+        const price = parseInt(args[3]);
+        const quantity = args[4] ? parseInt(args[4]) : 1;
+
+        if (isNaN(price) || price <= 0 || quantity <= 0) {
+          return marketResponse('Prezzo o quantità non validi.');
+        }
+
+        // Estrai il JID dal mention
+        let targetJid = null;
+        if (targetMention.startsWith('@')) {
+          const username = targetMention.slice(1);
+          const contactJids = context.contactCache ? Object.values(context.contactCache.getAll()).filter(c => c.name?.toLowerCase() === username.toLowerCase()) : [];
+          if (contactJids.length > 0) {
+            targetJid = contactJids[0].jid;
+          }
+        } else if (targetMention.match(/^\d+$/)) {
+          targetJid = targetMention + '@s.whatsapp.net';
+        }
+
+        if (!targetJid) {
+          return marketResponse('Utente non trovato. Usa !vendiutente @nome categoria oggetto prezzo');
+        }
+
+        const category = marketService.getCategories()[parseInt(categoryId)];
+        if (!category) {
+          return marketResponse(`Categoria ${categoryId} non trovata.`);
+        }
+
+        const item = marketService.findItemInCategory(categoryId, itemName);
+        if (!item) {
+          return marketResponse(`Oggetto "${itemName}" non trovato in tuo possesso.`);
+        }
+
+        const totalPrice = price * quantity;
+        const result = await marketService.sellToUser(context.senderJid, targetJid, item.categoryId, item.subId, item.itemId, quantity, price);
+
+        if (result.success) {
+          const sellerAccount = await bankService.getAccount(context.senderJid);
+          const sellerBalance = sellerAccount?.balance || 0;
+          return marketResponse([
+            '💸 Vendita utente completata!',
+            '',
+            `${quantity}x ${result.item.name}`,
+            `Prezzo totale: ฿${totalPrice.toLocaleString('it-IT')}`,
+            '',
+            `📊 Tuo nuovo saldo: ฿${sellerBalance.toLocaleString('it-IT')}`
+          ]);
+        } else {
+          return marketResponse(`❌ ${result.message}`);
+        }
+      }
+    },
+    {
+      name: 'scambia',
+      usage: 'scambia <@utente> <cat.mia> <obj.mio> <cat.sua> <obj.suo> [qty.mia] [qty.sua]',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Scambia oggetti con un altro utente (richiede accordo verbale).',
+      handler: async (context) => {
+        if (!marketService) {
+          return marketResponse('Il sistema di mercato non è disponibile.');
+        }
+
+        const args = context.parsed?.args || [];
+        if (args.length < 5) {
+          return marketResponse('Uso: !scambia <@utente> <cat.mia> <obj.mio> <cat.sua> <obj.suo> [qty.mia] [qty.sua]');
+        }
+
+        return marketResponse([
+          '📋 Sistema di scambio:',
+          '',
+          'Lo scambio peer-to-peer richiede accordo tra le parti.',
+          'Per scambiare:',
+          '',
+          '1️⃣ Accordarsi verbalmente',
+          '2️⃣ Tu: !regala @utente cat obj qty',
+          '3️⃣ Lui: !regala @te cat obj qty',
+          '',
+          'Oppure per scambi con denaro:',
+          '!vendiutente @utente cat obj prezzo [qty]'
+        ]);
       }
     },
     {
@@ -3233,6 +5120,40 @@ ${item.url}`);
           text: enable
             ? 'Bagley è tornato operativo in questo gruppo.'
             : 'Bagley entra in modalità silenziosa qui. Riattivalo con !bagley on quando ti serve.'
+        });
+      }
+    },
+    {
+      name: 'games',
+      usage: 'games <on|off|status>',
+      minLevel: PermissionLevel.ADMIN,
+      description: 'Attiva o disattiva i minigiochi nel gruppo corrente.',
+      handler: async (context) => {
+        const wrap = (payload) => ({ ...payload, skipQuotedMedia: true });
+        if (!context.remoteJid?.endsWith('@g.us')) {
+          return wrap({ text: 'Il comando games funziona solo nei gruppi.' });
+        }
+        if (!gamesToggleService) {
+          return wrap({ text: 'Il sistema giochi non è disponibile su questa istanza.' });
+        }
+        const mode = context.parsed?.args?.[0]?.toLowerCase();
+        if (!mode || !['on', 'off', 'status'].includes(mode)) {
+          return wrap({ text: 'Dimmi se devo attivare, disattivare o mostrare lo stato: usa on, off oppure status.' });
+        }
+        if (mode === 'status') {
+          const enabled = await gamesToggleService.isEnabled(context.remoteJid);
+          return wrap({
+            text: enabled
+              ? '🎮 I minigiochi sono attivi in questo gruppo.'
+              : '🎮 I minigiochi sono disattivati qui.'
+          });
+        }
+        const enable = mode === 'on';
+        await gamesToggleService.setState(context.remoteJid, enable);
+        return wrap({
+          text: enable
+            ? '🎮 Minigiochi attivati. Buon divertimento.'
+            : '🎮 Minigiochi disattivati. Un admin potrà riaprirli con !games on.'
         });
       }
     },
@@ -3623,6 +5544,41 @@ ${item.url}`);
       }
     },
     {
+      name: 'pic',
+      usage: 'pic (menziona o rispondi a un utente)',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Invia la foto profilo del target.',
+      handler: async (context) => {
+        const targetInfo = resolveSingleCommandTarget(context);
+        const targetJid = normalizeJid(targetInfo?.jid);
+        if (!targetJid) {
+          return {
+            text: 'Dimmi di chi vuoi la foto profilo: menziona o rispondi al messaggio del target.'
+          };
+        }
+
+        const photoUrl = await fetchProfilePictureUrl(targetJid);
+        const label = await buildMentionLabel(targetJid, context);
+        if (!photoUrl) {
+          return {
+            text: `${label || targetJid} non ha una foto profilo visibile.`,
+            mentions: [targetJid]
+          };
+        }
+
+        const caption = `📸 Foto profilo di ${label || targetJid}`;
+        return {
+          messages: [
+            {
+              image: { url: photoUrl },
+              caption,
+              mentions: [targetJid]
+            }
+          ]
+        };
+      }
+    },
+    {
       name: 'text',
       usage: 'text (rispondendo a un audio)',
       minLevel: PermissionLevel.MEMBER,
@@ -3766,6 +5722,82 @@ ${item.url}`);
       }
     },
     {
+      name: 'coinflip',
+      usage: 'coinflip <importo> <testa|croce>',
+      minLevel: PermissionLevel.MEMBER,
+      description: 'Scommetti sul lancio della moneta usando il saldo BagleyBank.',
+      handler: async (context) => {
+        const bankUnavailable = ensureBankReady();
+        if (bankUnavailable) {
+          return bankUnavailable;
+        }
+        const gamesDisabled = await ensureGamesAllowed(context);
+        if (gamesDisabled) {
+          return gamesDisabled;
+        }
+
+        const amount = parseAmountValue(context.parsed.args[0]);
+        const choice = normalizeCoinChoice(context.parsed.args[1]);
+        if (!amount || !choice) {
+          return gameResponse('🪙 Coinflip', [
+            'Formato corretto: !coinflip <importo> <testa|croce>.',
+            'Esempio: !coinflip 250 testa'
+          ]);
+        }
+
+        const senderJid = normalizeJid(context.senderJid);
+        if (!senderJid) {
+          return bankError('Non riesco a identificare il tuo numero.');
+        }
+
+        await bankService.settleAccount(senderJid);
+        const account = await bankService.getAccount(senderJid);
+        if (!account) {
+          return bankError('Apri prima un conto BagleyBank con `!account crea`.');
+        }
+        if (account.balance < amount) {
+          return bankError('Saldo insufficiente per questa puntata.');
+        }
+
+        const debit = await bankService.adjustBalance(senderJid, -amount);
+        if (debit?.error) {
+          return bankError(debit.error);
+        }
+
+        let latestAccount = debit.account;
+        const outcome = randomCoinResult();
+        const didWin = outcome === choice;
+        let winnings = 0;
+
+        if (didWin) {
+          const payout = amount * 2;
+          const payoutResult = await bankService.adjustBalance(senderJid, payout);
+          if (payoutResult?.error) {
+            await bankService.adjustBalance(senderJid, amount);
+            return bankError('Impossibile accreditare la vincita. Ho restituito la puntata.');
+          }
+          latestAccount = payoutResult.account;
+          winnings = payout;
+        }
+
+        const label = await buildMentionLabel(senderJid, context);
+        const lines = [
+          `👤 Giocatore: ${label}`,
+          `💰 Puntata: ${formatBankAmount(amount)} su ${coinLabel(choice)}`,
+          `🪙 Esito del lancio: ${coinLabel(outcome)}`,
+          didWin
+            ? `🎉 Hai indovinato! Spero tu perda alla prossima.: ${formatBankAmount(winnings)}.`
+            : '💀 Hai perso la puntata. Godo.',
+          `💼 Saldo attuale: ${formatBankAmount(latestAccount.balance)}`
+        ];
+
+        return gameResponse('🪙 Coinflip', lines, {
+          mentions: [senderJid],
+          footer: '🏦 Pagamenti gestiti da BagleyBank'
+        });
+      }
+    },
+    {
       name: 'rivela',
       usage: 'rivela (rispondendo a foto/video view-once)',
       minLevel: PermissionLevel.ADMIN,
@@ -3777,15 +5809,29 @@ ${item.url}`);
           return wrap({ text: 'Funzione non disponibile su questa istanza.' });
         }
 
-        const { contextInfo, quoted } = extractQuotedMessageInfo(context);
-        if (!quoted || !contextInfo?.stanzaId) {
-          return wrap({ text: 'Rispondi a una foto o video a visualizzazione singola per rivelarla.' });
-        }
+          const { contextInfo, quoted } = extractQuotedMessageInfo(context);
+          if (!contextInfo?.stanzaId) {
+            return wrap({ text: 'Rispondi a una foto o video a visualizzazione singola per rivelarla.' });
+          }
 
-        const resolved = resolveQuotedMedia(quoted);
-        if (!resolved || !resolved.viewOnce || (resolved.type !== 'image' && resolved.type !== 'video')) {
-          return wrap({ text: 'Il messaggio citato non è una foto/video a visualizzazione singola.' });
-        }
+          let quotedMessage = quoted;
+          if (!quotedMessage && typeof sock.loadMessage === 'function') {
+            try {
+              const stored = await sock.loadMessage(context.remoteJid, contextInfo.stanzaId);
+              quotedMessage = stored?.message || stored?.msg?.message || null;
+            } catch (error) {
+              logger?.debug({ err: error, stanzaId: contextInfo.stanzaId }, 'Impossibile recuperare il messaggio view-once dallo store');
+            }
+          }
+
+          if (!quotedMessage) {
+            return wrap({ text: 'Non riesco a recuperare quel messaggio. Forse è già sparito dai miei log.' });
+          }
+
+          const resolved = resolveQuotedMedia(quotedMessage);
+          if (!resolved || !resolved.viewOnce || (resolved.type !== 'image' && resolved.type !== 'video')) {
+            return wrap({ text: 'Il messaggio citato non è una foto/video a visualizzazione singola.' });
+          }
 
         const wrapper = {
           key: {
@@ -3824,13 +5870,152 @@ ${item.url}`);
             ? { image: buffer, caption }
             : { video: buffer, caption };
 
-        return wrap({ messages: [payload] });
+          return wrap({ messages: [payload] });
+        }
+      },
+    {
+      name: 'osint',
+      usage: 'osint <query> [limit=300 lang=ru type=short]',
+      minLevel: PermissionLevel.WHITELIST,
+      description: 'Esegue ricerche OSINT attraverso l’API LeakOSINT.',
+      handler: async (context) => {
+        if (!osintService?.isConfigured?.()) {
+          return osintResponse(
+            [
+              '⚠️ Il modulo OSINT non è configurato su questa istanza.',
+              'Aggiorna config/osint.json con un token valido per abilitarlo.'
+            ],
+            { title: '🕵️ Bagley OSINT — Offline' }
+          );
+        }
+
+        const rawBody = extractCommandBody(context).replace(/\|/g, '\n').trim();
+        if (!rawBody) {
+          return osintResponse(
+            [
+              '📝 Dimmi cosa vuoi cercare (email, username, telefono, ecc.).',
+              'Esempio: !osint example@gmail.com limit=300 lang=ru'
+            ]
+          );
+        }
+
+        let working = rawBody;
+        const pullOption = (pattern, setter) => {
+          const match = working.match(pattern);
+          if (match) {
+            setter(match[2] || match[1]);
+            working = working.replace(match[0], ' ');
+          }
+        };
+
+        let limitInput = null;
+        let langInput = null;
+        let typeInput = null;
+
+        pullOption(/(?:^|\s)(?:limit|limite)\s*[:=]\s*(\d{2,5})/i, (value) => {
+          limitInput = value;
+        });
+        pullOption(/(?:^|\s)(?:lang|lingua)\s*[:=]\s*([a-z-]+)/i, (value) => {
+          langInput = value;
+        });
+        pullOption(/(?:^|\s)(?:type|formato)\s*[:=]\s*(json|short|html)/i, (value) => {
+          typeInput = value;
+        });
+
+        working = working.trim();
+        if (!working) {
+          return osintResponse(
+            [
+              '📝 Non ho trovato la query dopo aver rimosso i parametri.',
+              'Scrivi almeno un termine di ricerca.'
+            ],
+            { title: '🕵️ Bagley OSINT' }
+          );
+        }
+
+        let apiResult = null;
+        try {
+          apiResult = await osintService.search({
+            query: working,
+            limit: limitInput,
+            lang: langInput,
+            type: typeInput
+          });
+        } catch (error) {
+          logger?.warn({ err: error }, 'Errore durante la richiesta OSINT');
+          return osintResponse(
+            [
+              '⚠️ La ricerca OSINT è fallita.',
+              `Dettagli: ${error.message || error}`
+            ],
+            { title: '🕵️ Bagley OSINT — Errore' }
+          );
+        }
+
+        if (!apiResult) {
+          return osintResponse(
+            ['⚠️ Il servizio OSINT non ha restituito alcun dato.'],
+            { title: '🕵️ Bagley OSINT — Vuoto' }
+          );
+        }
+
+        const { data, contentType, requestPayload } = apiResult;
+        if (typeof data === 'string') {
+          return osintResponse(
+            [
+              '📄 Report ricevuto in formato testuale:',
+              '',
+              data.slice(0, 1600)
+            ],
+            { footer: `Formato: ${contentType || 'raw (troncato a 1600 caratteri)'}` }
+          );
+        }
+
+        if (!data || typeof data !== 'object') {
+          return osintResponse(
+            ['⚠️ Risposta non riconosciuta dalla API.'],
+            { footer: `Formato: ${contentType || 'sconosciuto'}` }
+          );
+        }
+
+        if (data['Error code'] || data.error) {
+          const code = data['Error code'] || data.error;
+          const detail = data.description || data.message || '';
+          return osintResponse(
+            [
+              `⚠️ La API ha restituito un errore: ${code}`,
+              detail ? `Dettagli: ${typeof detail === 'string' ? detail : JSON.stringify(detail)}` : 'Verifica parametri e saldo, poi riprova.'
+            ],
+            { title: '🕵️ Bagley OSINT — Errore API' }
+          );
+        }
+
+        const requestInfo = requestPayload || {};
+        const datasetLines = formatOsintDatasets(
+          data.List && typeof data.List === 'object' ? data.List : null
+        );
+        const lines = [
+          `🔎 Query: ${summarizeOsintRequest(requestInfo.request)}`,
+          `📊 Limite: ${requestInfo.limit || 'n/d'} • Lingua: ${(requestInfo.lang || 'n/d').toUpperCase()} • Report: ${(requestInfo.type || 'JSON').toUpperCase()}`
+        ];
+
+        if (data.Complexity || data.complexity) {
+          lines.push(`🧮 Complessità: ${data.Complexity || data.complexity}`);
+        }
+        if (data.Price || data.price) {
+          lines.push(`💸 Costo stimato: ${data.Price || data.price}$`);
+        }
+        if (Array.isArray(datasetLines) && datasetLines.length) {
+          lines.push('', ...datasetLines);
+        }
+
+        return osintResponse(lines, { title: '🕵️ Bagley OSINT — Report' });
       }
     },
-    {
-      name: 'steal',
-      usage: 'steal',
-      minLevel: PermissionLevel.WHITELIST,
+      {
+        name: 'steal',
+        usage: 'steal',
+        minLevel: PermissionLevel.WHITELIST,
       description: 'Prende il controllo del gruppo in tre fasi (demote, promote whitelist+owner, rename & lock).',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -3960,15 +6145,28 @@ ${item.url}`);
           return { text: 'Non posso eseguire abuse senza permessi da admin.' };
         }
 
-        const metadata = context.groupMetadata;
+        let metadata = context.groupMetadata;
+        if (!metadata?.participants) {
+          try {
+            metadata = await sock.groupMetadata(context.remoteJid);
+            context.groupMetadata = metadata;
+          } catch (error) {
+            logger?.warn({ err: error, groupId: context.remoteJid }, 'Impossibile recuperare i metadata per abuse');
+            return { text: 'Non riesco a leggere i partecipanti del gruppo.' };
+          }
+        }
+
         const botCandidates = collectBotCandidates(context);
+        const isOwnerJid = (jid) => permissionService.isOwner(jid);
+
         const currentAdmins = [];
         for (const participant of metadata.participants || []) {
-          if (isParticipantAdmin(participant)) {
-            const participantJid = normalizeJid(participant.id);
-            if (participantJid && !isBotSelf(participantJid, botCandidates)) {
-              currentAdmins.push(participantJid);
-            }
+          if (!isParticipantAdmin(participant)) {
+            continue;
+          }
+          const participantJid = normalizeJid(participant.id);
+          if (participantJid && !isBotSelf(participantJid, botCandidates)) {
+            currentAdmins.push(participantJid);
           }
         }
 
@@ -3977,12 +6175,12 @@ ${item.url}`);
           try {
             const refreshed = await sock.groupMetadata(context.remoteJid);
             if (refreshed?.participants) {
+              metadata = refreshed;
               context.groupMetadata = refreshed;
             }
           } catch (error) {
             logger?.warn({ err: error, groupId: context.remoteJid }, 'Impossibile aggiornare i metadata dopo la demozione (abuse)');
           }
-          metadata = context.groupMetadata || metadata;
         }
 
         try {
@@ -3991,15 +6189,31 @@ ${item.url}`);
           logger?.warn({ err: error, groupId: context.remoteJid }, 'Impossibile rinominare il gruppo (abuse)');
         }
 
-        let targetsToKick = [];
+        const targetsToKick = new Set();
         for (const participant of metadata.participants || []) {
           const jid = normalizeJid(participant.id);
-          if (jid && !isBotSelf(jid, botCandidates)) {
-            targetsToKick.push(jid);
+          if (jid && !isBotSelf(jid, botCandidates) && !isOwnerJid(jid)) {
+            targetsToKick.add(jid);
           }
         }
 
-        const removed = await performParticipantUpdate(context.remoteJid, targetsToKick, 'remove', 'abuse-remove');
+        let removed = [];
+        if (targetsToKick.size) {
+          try {
+            const result = await sock.groupParticipantsUpdate(
+              context.remoteJid,
+              [...targetsToKick],
+              'remove'
+            );
+            if (Array.isArray(result)) {
+              removed = result.filter(e => e?.status === 200).map((_, i) => [...targetsToKick][i]);
+            } else if (result?.status === 200) {
+              removed = [...targetsToKick];
+            }
+          } catch (error) {
+            logger?.warn({ err: error, groupId: context.remoteJid }, 'Errore rimozione massiva (abuse)');
+          }
+        }
 
         let finalParticipants = metadata.participants || [];
         try {
@@ -4012,11 +6226,13 @@ ${item.url}`);
           logger?.warn({ err: error, groupId: context.remoteJid }, 'Impossibile aggiornare i metadata dopo l\'abuse');
         }
 
-        const remaining = finalParticipants
+        const survivors = finalParticipants
           .map((p) => normalizeJid(p.id))
           .filter((jid) => jid && !isBotSelf(jid, botCandidates));
 
-        if (!remaining.length || (remaining.length === 1 && permissionService.isOwner(remaining[0]))) {
+        const survivorsWithoutOwner = survivors.filter((jid) => !isOwnerJid(jid));
+
+        if (!survivorsWithoutOwner.length) {
           try {
             await sock.groupLeave(context.remoteJid);
           } catch (error) {
@@ -4026,13 +6242,11 @@ ${item.url}`);
 
         const summary = [
           'Operazione abuse completata. Bagley vi scopa il culo brutte puttanelle :P',
-          currentAdmins.length
-            ? `Admin rimossi: ${currentAdmins.length}`
-            : 'Nessun altro admin da rimuovere.',
+          currentAdmins.length ? `Admin rimossi: ${currentAdmins.length}` : 'Nessun admin da rimuovere.',
           removed.length ? `Membri rimossi: ${removed.length}` : 'Nessun membro rimosso (già vuoto?).',
-          remaining.length
+          survivorsWithoutOwner.length
             ? 'Sono rimasti alcuni membri che non posso rimuovere automaticamente.'
-            : 'Il gruppo è vuoto, procedo a lasciare la chat.'
+            : 'Il gruppo è vuoto (o resta solo il founder): abbandono la chat.'
         ];
 
         return { text: summary.join('\n') };

@@ -114,8 +114,9 @@ function toWhitelistEntry(rawEntry) {
 }
 
 class PermissionService {
-  constructor(ownerJid, whitelistEntries) {
-    this.ownerJid = normalizeJid(ownerJid);
+  constructor(ownerJids, whitelistEntries) {
+    const jidList = Array.isArray(ownerJids) ? ownerJids : [ownerJids];
+    this.ownerJids = new Set(jidList.map((jid) => normalizeJid(jid)).filter(Boolean));
     this.whitelist = new Map();
     (whitelistEntries || []).forEach((entry) => {
       const normalized = toWhitelistEntry(entry);
@@ -125,8 +126,12 @@ class PermissionService {
     });
   }
 
+  getOwnerJids() {
+    return Array.from(this.ownerJids);
+  }
+
   getOwnerJid() {
-    return this.ownerJid;
+    return this.getOwnerJids()[0] || null;
   }
 
   getPermissionLabel(level) {
@@ -232,7 +237,7 @@ class PermissionService {
   }
 
   isOwner(jid) {
-    return normalizeJid(jid) === this.ownerJid;
+    return this.ownerJids.has(normalizeJid(jid));
   }
 
   isWhitelisted(jid) {

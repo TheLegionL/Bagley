@@ -1,0 +1,9 @@
+{
+  "endpoint": "https://leakosintapi.com/",
+  "token": "1378880505:pUE1D41P",
+  "defaultLimit": 100,
+  "defaultLang": "en",
+  "defaultType": "json",
+  "botName": null,
+  "timeoutMs": 15000
+}

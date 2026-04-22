@@ -1,0 +1,161 @@
+{
+  "groups": {
+    "120363418884166710@g.us": {
+      "leagueId": "premier-league",
+      "history": [
+        {
+          "matchId": "2013fa65-42aa-46d5-a0b0-dbcba05ec54d",
+          "league": "Premier League",
+          "summary": "Crystal Palace 1 - 3 Burnley",
+          "timestamp": 1769096683249
+        },
+        {
+          "matchId": "9c09b0e8-6856-4c09-aeba-477d8325dc30",
+          "league": "Premier League",
+          "summary": "Nottingham Forest 1 - 2 Manchester United",
+          "timestamp": 1769096538032
+        },
+        {
+          "matchId": "d99231b1-7e75-4702-83a9-a829e59e39e2",
+          "league": "Premier League",
+          "summary": "Aston Villa 1 - 2 Chelsea",
+          "timestamp": 1769096377781
+        },
+        {
+          "matchId": "3437d22e-dfc7-405f-86c9-61f63984d983",
+          "league": "Serie A",
+          "summary": "Lecce 3 - 2 Internazionale",
+          "timestamp": 1769095423532
+        },
+        {
+          "matchId": "62993cea-e2cb-45ef-a8d3-7af9fae095d3",
+          "league": "Serie A",
+          "summary": "Pisa 4 - 1 Torino",
+          "timestamp": 1769056001639
+        },
+        {
+          "matchId": "5f9b6d8f-c356-4099-8784-769421954916",
+          "league": "Serie A",
+          "summary": "Cremonese 2 - 1 Lazio",
+          "timestamp": 1769055540650
+        },
+        {
+          "matchId": "e73a7360-023d-4b43-bc24-54424b872948",
+          "league": "Serie A",
+          "summary": "AS Roma 4 - 1 Internazionale",
+          "timestamp": 1769051483285
+        }
+      ],
+      "leaderboard": {
+        "16424626057376@lid": {
+          "bets": 1,
+          "wins": 1,
+          "losses": 0,
+          "profit": 900
+        }
+      },
+      "activeMatch": null
+    },
+    "120363406613843375@g.us": {
+      "leagueId": "premier-league",
+      "history": [
+        {
+          "matchId": "5aad1786-73e5-46a8-9f30-50685bc4a02f",
+          "league": "Premier League",
+          "summary": "Crystal Palace 2 - 1 AFC Bournemouth",
+          "timestamp": 1769053554219
+        }
+      ],
+      "leaderboard": {},
+      "activeMatch": null
+    },
+    "120363424720806305@g.us": {
+      "leagueId": "serie-a",
+      "history": [
+        {
+          "matchId": "7dd8caec-4669-4e66-9f31-c8ca067c3fb8",
+          "league": "Serie A",
+          "summary": "AS Roma 1 - 1 Bologna",
+          "timestamp": 1769098090564
+        },
+        {
+          "matchId": "9b357276-e692-407e-ada0-aff1480e828a",
+          "league": "Serie A",
+          "summary": "Parma 3 - 2 Bologna",
+          "timestamp": 1769097719968
+        },
+        {
+          "matchId": "af5e18ac-1f30-4f61-977f-fe02bac8e156",
+          "league": "Premier League",
+          "summary": "Nottingham Forest 2 - 3 West Ham United",
+          "timestamp": 1769097409447
+        },
+        {
+          "matchId": "b5cf075f-5b02-478a-9521-cdc9231e9ddb",
+          "league": "Premier League",
+          "summary": "AFC Bournemouth 1 - 1 Fulham",
+          "timestamp": 1769097244121
+        },
+        {
+          "matchId": "788b38cb-df92-4b27-9c34-4e39d224bf1e",
+          "league": "Premier League",
+          "summary": "AFC Bournemouth 1 - 1 Brentford",
+          "timestamp": 1769097073859
+        },
+        {
+          "matchId": "048568e7-c8ba-42ec-943e-e69fa38ae327",
+          "league": "Premier League",
+          "summary": "Wolverhampton Wanderers 2 - 1 Liverpool",
+          "timestamp": 1769096908588
+        }
+      ],
+      "leaderboard": {
+        "62315680551088@lid": {
+          "bets": 3,
+          "wins": 1,
+          "losses": 2,
+          "profit": -3.04
+        },
+        "213340286640349@lid": {
+          "bets": 1,
+          "wins": 0,
+          "losses": 1,
+          "profit": -3
+        }
+      },
+      "activeMatch": null
+    },
+    "120363401876660062@g.us": {
+      "leagueId": "premier-league",
+      "history": [
+        {
+          "matchId": "d8a07dd0-a6bd-4a59-9ff4-69887ef0adfc",
+          "league": "Premier League",
+          "summary": "AFC Bournemouth 3 - 1 Arsenal",
+          "timestamp": 1769106923093
+        }
+      ],
+      "leaderboard": {},
+      "activeMatch": null
+    },
+    "120363423001770370@g.us": {
+      "leagueId": "serie-a",
+      "history": [
+        {
+          "matchId": "1f6ef637-bfff-4242-9e13-ceb8852c17c2",
+          "league": "Serie A",
+          "summary": "Bologna 2 - 3 Napoli",
+          "timestamp": 1769543086253
+        },
+        {
+          "matchId": "61192d15-b282-4b61-a07c-f409cc2649e0",
+          "league": "Serie A",
+          "summary": "Internazionale 3 - 4 AC Milan",
+          "timestamp": 1769541419301
+        }
+      ],
+      "leaderboard": {},
+      "activeMatch": null
+    }
+  }
+}

@@ -4,7 +4,8 @@ const {
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   useMultiFileAuthState,
-  downloadMediaMessage
+  downloadMediaMessage,
+  proto
 } = require('@whiskeysockets/baileys');
 const Boom = require('@hapi/boom');
 const pino = require('pino');
@@ -24,15 +25,101 @@ const { extractMessageText, isGroupMessage, isReplyToBot } = require('./utils');
 const { createRadarService } = require('./radar-service');
 const { createAntibotService } = require('./antibot-service');
 const { createBlacklistService } = require('./blacklist-service');
+const { createBankService } = require('./bank-service');
+const { createFutService } = require('./fut-service');
 const { createBotToggleService } = require('./bot-toggle-service');
 const { createAiToggleService } = require('./ai-toggle-service');
+const { createGamesToggleService } = require('./games-toggle-service');
 const { createSilenceService } = require('./silence-service');
+const { createGreetService } = require('./greet-service');
+const { createAntighostService } = require('./antighost-service');
+const { createOsintService } = require('./osint-service');
+const { createMarketService } = require('./market-service');
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info'
 });
 
 const LINK_REGEX = /((https?:\/\/|www\.)\S+|chat\.whatsapp\.com\/\S+|wa\.me\/\S+|t\.me\/\S+|discord\.gg\/\S+)/i;
+const MAX_ANTIGHOST_CACHE = 800;
+const antighostMessageStore = new Map();
+
+const rememberAntighostMessage = (msg) => {
+  if (!msg?.message || msg.message.protocolMessage) {
+    return;
+  }
+  const remoteJid = normalizeJid(msg.key?.remoteJid);
+  if (!remoteJid || !remoteJid.endsWith('@g.us')) {
+    return;
+  }
+  const messageId = msg.key?.id;
+  if (!messageId) {
+    return;
+  }
+  antighostMessageStore.set(messageId, {
+    remoteJid,
+    message: msg
+  });
+  if (antighostMessageStore.size > MAX_ANTIGHOST_CACHE) {
+    const oldest = antighostMessageStore.keys().next().value;
+    if (oldest) {
+      antighostMessageStore.delete(oldest);
+    }
+  }
+};
+
+const handleAntighostReplay = async ({
+  remoteJid,
+  revokedKey,
+  antighostService,
+  sock,
+  contactCache,
+  groupMetadataCache,
+  logger
+}) => {
+  const normalizedGroup = normalizeJid(remoteJid);
+  if (!normalizedGroup?.endsWith('@g.us')) {
+    return;
+  }
+  if (!revokedKey?.id || !antighostService) {
+    return;
+  }
+  if (!(await antighostService.isEnabled(normalizedGroup))) {
+    return;
+  }
+  const stored = antighostMessageStore.get(revokedKey.id);
+  if (!stored || normalizeJid(stored.remoteJid) !== normalizedGroup) {
+    return;
+  }
+  antighostMessageStore.delete(revokedKey.id);
+  const messageNode = stored.message?.message;
+  if (!messageNode) {
+    return;
+  }
+  const authorJid =
+    normalizeJid(
+      stored.message?.key?.participant ||
+        stored.message?.participant ||
+        stored.message?.key?.remoteJid
+    ) || 'utente sconosciuto';
+  const groupMetadata = groupMetadataCache.get(normalizedGroup);
+  const authorLabel =
+    contactCache.getDisplayName(authorJid, {
+      groupMetadata,
+      hint: stored.message?.pushName
+    }) || authorJid;
+  try {
+    await sock.sendMessage(normalizedGroup, {
+      text: `♻️ Messaggio eliminato da ${authorLabel}`,
+      mentions: authorJid ? [authorJid] : undefined
+    });
+    await sock.relayMessage(normalizedGroup, messageNode, {
+      messageId: `${revokedKey.id}-ghost`
+    });
+  } catch (error) {
+    logger?.warn({ err: error, remoteJid: normalizedGroup }, 'Impossibile ripubblicare il messaggio eliminato');
+  }
+};
 
 function createCallTracker() {
   const END_STATUSES = new Set(['reject', 'timeout', 'terminate', 'hangup', 'stop', 'ended', 'leave']);
@@ -59,6 +146,14 @@ function createCallTracker() {
       return;
     }
 
+    if (process.env.CALL_DEBUG) {
+      try {
+        console.log('CALL_DEBUG registerCall ->', JSON.stringify({ groupJid, id: info.id, from: info.from || info.creator || info.chatId, status }));
+      } catch (e) {
+        console.log('CALL_DEBUG registerCall (non-serializable info)');
+      }
+    }
+
     activeCalls.set(groupJid, {
       id: info.id,
       from: normalizeJid(info.from || info.creator || info.chatId),
@@ -71,6 +166,7 @@ function createCallTracker() {
 
   const parseCallNode = (node) => {
     if (!node?.content?.length) {
+      if (process.env.CALL_DEBUG) console.log('CALL_DEBUG parseCallNode -> node has no content', JSON.stringify(node));
       return null;
     }
 
@@ -80,15 +176,20 @@ function createCallTracker() {
         continue;
       }
 
-      return {
+      const parsed = {
         id: attrs['call-id'],
         from: attrs.from || attrs['call-creator'] || node.attrs?.from,
         groupJid: attrs['group-jid'] || node.attrs?.from,
         chatId: node.attrs?.from,
         status: child.tag || node.attrs?.type || ''
       };
+
+      if (process.env.CALL_DEBUG) console.log('CALL_DEBUG parseCallNode -> parsed', JSON.stringify(parsed));
+
+      return parsed;
     }
 
+    if (process.env.CALL_DEBUG) console.log('CALL_DEBUG parseCallNode -> no call-id found in children', JSON.stringify(node));
     return null;
   };
 
@@ -137,7 +238,14 @@ async function startBot(services) {
     blacklistService,
     botToggleService,
     aiToggleService,
-    silenceService
+    gamesToggleService,
+    silenceService,
+    greetService,
+    antighostService,
+    bankService,
+    marketService,
+    futService,
+    osintService
   } = services;
   const { state, saveCreds } = await useMultiFileAuthState('auth_info_multi');
   const { version } = await fetchLatestBaileysVersion();
@@ -243,12 +351,127 @@ async function startBot(services) {
     blacklistEnforcer,
     botToggleService,
     aiToggleService,
-    silenceService
+    gamesToggleService,
+    silenceService,
+    greetService,
+    antighostService,
+    bankService,
+    marketService,
+    futService,
+    osintService
   });
   const groupMetadataCache = new Map();
   const trackedBotMessageIds = new Set();
   const MAX_TRACKED_MESSAGES = 200;
   let botJid = sock.user?.id || null;
+
+  const formatBankAmount = (value) => {
+    if (bankService?.formatCurrency) {
+      return bankService.formatCurrency(value);
+    }
+    const safe = Math.floor(Number(value) || 0);
+    return `฿${safe.toLocaleString('it-IT')}`;
+  };
+
+  const formatPrice = (price) => {
+    if (price >= 1000000000) {
+      return `฿${(price / 1000000000).toFixed(1)}B`;
+    } else if (price >= 1000000) {
+      return `฿${(price / 1000000).toFixed(1)}M`;
+    } else if (price >= 1000) {
+      return `฿${(price / 1000).toFixed(1)}K`;
+    } else {
+      return `฿${price.toFixed(2)}`;
+    }
+  };
+
+  const formatChange = (changePercent) => {
+    const sign = changePercent >= 0 ? '+' : '';
+    const color = changePercent >= 0 ? '🟢' : '🔴';
+    return `${color} ${sign}${changePercent.toFixed(2)}%`;
+  };
+
+  const announceFutResult = async (groupId, match) => {
+    if (!match?.result) {
+      return;
+    }
+    const { result } = match;
+    const lines = [
+      '--- ⚽​ Bagley FUT ⚽​ ---',
+      `\n🤯 Match concluso:\n${match.homeTeam.name} ${result.homeGoals}-${result.awayGoals} ${match.awayTeam.name}`
+    ];
+    const outcomeLabel =
+      result.outcome === 'HOME'
+        ? `\nℹ️ Esito: Vittoria ​🅰️​${match.homeTeam.name}`
+        : result.outcome === 'AWAY'
+        ? `ℹ️ Esito: Vittoria 🅱️​​${match.awayTeam.name}`
+        : 'ℹ️ Esito: Pareggio';
+    lines.push(outcomeLabel);
+
+    const bets = Array.isArray(match.bets) ? match.bets : [];
+    const winners = bets.filter((bet) => bet.result?.won);
+    const mentions = new Set();
+
+    if (bets.length === 0) {
+      lines.push('', '⚠️ Nessuna scommessa piazzata per questo match.');
+    } else if (!winners.length) {
+      lines.push('', '⚠️ Nessun vincitore stavolta. Ritenta col prossimo match!');
+    } else {
+      lines.push('', '🏆 Vincitori:');
+      for (const bet of winners) {
+        const name =
+          contactCache?.getDisplayName(bet.bettor) ||
+          contactCache?.getDisplayName(`${bet.bettor.split('@')[0]}@s.whatsapp.net`) ||
+          bet.bettor.split('@')[0];
+        mentions.add(bet.bettor);
+        const selectionLabel = Array.isArray(bet.legs) && bet.legs.length
+          ? bet.legs.map((leg) => leg.label).join(' + ')
+          : bet.label;
+        lines.push(
+          `- ${name}: ${formatBankAmount(bet.result.payout)} (puntata ${formatBankAmount(
+            bet.amount
+          )} su ${selectionLabel})`
+        );
+      }
+    }
+
+    try {
+      await sock.sendMessage(groupId, { text: lines.join('\n'), mentions: [...mentions] });
+    } catch (error) {
+      logger?.warn({ err: error, groupId }, 'Impossibile inviare il risultato FUT');
+    }
+  };
+
+  if (futService) {
+    const futTick = async () => {
+      const groupIds = typeof futService.listGroupIds === 'function' ? futService.listGroupIds() : [];
+      const now = Date.now();
+      for (const groupId of groupIds) {
+        try {
+          const outcome = await futService.processGroupMatches(groupId);
+          if (outcome?.match) {
+            await announceFutResult(groupId, outcome.match);
+          }
+          const events = await futService.consumeTimelineEvents(groupId, now);
+          if (events?.length) {
+            for (const event of events) {
+              await sock
+                .sendMessage(groupId, { text: event.message })
+                .catch((error) =>
+                  logger?.warn({ err: error, groupId }, 'Impossibile inviare update FUT')
+                );
+            }
+          }
+        } catch (error) {
+          logger?.warn({ err: error, groupId }, 'Errore durante il ciclo FUT');
+        }
+      }
+    };
+
+    setInterval(() => {
+      futTick().catch((error) => logger?.warn({ err: error }, 'Errore nel ciclo di aggiornamento FUT'));
+    }, 5000);
+  }
 
   const spamTracker = new Map();
   const spamCooldown = new Map();
@@ -449,7 +672,50 @@ async function startBot(services) {
     }
   };
 
-  sock.ev.on('group-participants.update', (update) => invalidateMetadata(update.id));
+  sock.ev.on('group-participants.update', async (update) => {
+    invalidateMetadata(update.id);
+    try {
+      const groupId = normalizeJid(update?.id);
+      if (!groupId?.endsWith('@g.us')) {
+        return;
+      }
+      if (!greetService || !(await greetService.isEnabled(groupId))) {
+        return;
+      }
+      const participants = Array.isArray(update?.participants) ? update.participants : [];
+      if (!participants.length) {
+        return;
+      }
+      const action = (update?.action || '').toLowerCase();
+      if (action !== 'add' && action !== 'remove') {
+        return;
+      }
+      for (const participant of participants) {
+        const jid = normalizeJid(participant);
+        if (!jid) {
+          continue;
+        }
+        const bare = jid.split('@')[0];
+        let metadata = groupMetadataCache.get(groupId);
+        if (!metadata) {
+          try {
+            metadata = await sock.groupMetadata(groupId);
+            groupMetadataCache.set(groupId, metadata);
+          } catch (error) {
+            logger?.warn({ err: error, groupId }, 'Impossibile ottenere i metadati del gruppo per greet');
+          }
+        }
+        const groupName = metadata?.subject || groupId;
+        const text =
+          action === 'add'
+            ? `@${bare} benvenuto in ${groupName} comportati bene altrimenti ti scopo il culo okay.`
+            : `Salutate @${bare} che ha deciso di abbandonare questa topaia.`;
+        await sock.sendMessage(groupId, { text, mentions: [jid] });
+      }
+    } catch (error) {
+      logger?.warn({ err: error, update }, 'Impossibile inviare il messaggio greet');
+    }
+  });
   sock.ev.on('groups.update', (updates) => {
     for (const update of updates) {
       invalidateMetadata(update.id);
@@ -457,6 +723,7 @@ async function startBot(services) {
   });
 
   sock.ev.on('call', (callUpdates) => {
+    if (process.env.CALL_DEBUG) console.log('CALL_DEBUG EVENT sock.ev.on("call"): ', JSON.stringify(callUpdates));
     callTracker.trackCallUpdates(callUpdates);
   });
 
@@ -464,6 +731,7 @@ async function startBot(services) {
     if (!node) {
       return;
     }
+    if (process.env.CALL_DEBUG) console.log('CALL_DEBUG EVENT sock.ev.on("CB:call"): ', JSON.stringify(node));
     if (Array.isArray(node)) {
       callTracker.trackCallNodes(node);
     } else if (node.tag === 'call' || node.tag === 'relaylatency') {
@@ -472,15 +740,42 @@ async function startBot(services) {
       callTracker.trackCallNodes(node.content);
     }
   });
-
   sock.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
+      if (process.env.CALL_DEBUG) {
+        try {
+          const excerpt = JSON.stringify({ key: msg.key, messageType: Object.keys(msg.message || {})[0] || null });
+          console.log('CALL_DEBUG messages.upsert ->', excerpt);
+        } catch (e) {
+          console.log('CALL_DEBUG messages.upsert -> (could not serialize message)');
+        }
+      }
       try {
         if (!msg.message) {
           continue;
         }
 
         const remoteJid = msg.key?.remoteJid;
+        const normalizedRemote = normalizeJid(remoteJid);
+        const protocolMessage = msg.message?.protocolMessage;
+        if (
+          protocolMessage &&
+          protocolMessage.type === proto.Message.ProtocolMessage.Type.REVOKE &&
+          normalizedRemote?.endsWith('@g.us')
+        ) {
+          const revokedKey = protocolMessage.key || msg.key;
+          await handleAntighostReplay({
+            remoteJid: normalizedRemote,
+            revokedKey,
+            antighostService,
+            sock,
+            contactCache,
+            groupMetadataCache,
+            logger
+          });
+          continue;
+        }
+
         if (!remoteJid || remoteJid === 'status@broadcast') {
           continue;
         }
@@ -497,6 +792,7 @@ async function startBot(services) {
         const senderJid = msg.key?.participant || msg.participant || remoteJid;
         const normalizedSender = normalizeJid(senderJid);
         contactCache.rememberMessage(msg);
+        rememberAntighostMessage(msg);
 
         let groupMetadata = null;
         if (isGroupMessage(msg)) {
@@ -515,15 +811,18 @@ async function startBot(services) {
         }
 
         const permissionLevel = permissionService.getPermissionLevel(senderJid, groupMetadata);
+        const restrictionImmune = permissionLevel >= PermissionLevel.ADMIN;
         const baseContext = {
           text,
           message: msg,
           remoteJid,
           senderJid,
           permissionLevel,
+          restrictionImmune,
           groupMetadata,
           botJid: botJid || sock.user?.id,
-          contactCache
+          contactCache,
+          bankService
         };
 
         const parsedCommand =
@@ -548,7 +847,8 @@ async function startBot(services) {
           remoteJid.endsWith('@g.us') &&
           blacklistService &&
           normalizedSender &&
-          blacklistService.isBlacklisted(normalizedSender)
+          blacklistService.isBlacklisted(normalizedSender) &&
+          !restrictionImmune
         ) {
           try {
             await blacklistEnforcer.removeFromGroup(remoteJid, [normalizedSender]);
@@ -571,7 +871,7 @@ async function startBot(services) {
           }
         }
 
-        if (remoteJid.endsWith('@g.us') && muteService) {
+        if (remoteJid.endsWith('@g.us') && muteService && !restrictionImmune) {
           const muteInfo = await muteService.isMuted(remoteJid, senderJid);
           if (muteInfo) {
             try {
@@ -588,7 +888,8 @@ async function startBot(services) {
           antibotService &&
           text &&
           text.trim().startsWith('.') &&
-          (await antibotService.isEnabled(remoteJid))
+          (await antibotService.isEnabled(remoteJid)) &&
+          !restrictionImmune
         ) {
           try {
             await sock.sendMessage(remoteJid, { delete: msg.key });
@@ -602,7 +903,7 @@ async function startBot(services) {
           groupMetadata &&
           antispamService &&
           (await antispamService.isEnabled(remoteJid)) &&
-          permissionLevel <= PermissionLevel.ADMIN
+          !restrictionImmune
         ) {
           const entries = recordSpamEntry(remoteJid, senderJid, msg);
           if (entries && canTriggerSpamAction(remoteJid)) {
@@ -622,7 +923,8 @@ async function startBot(services) {
           antilinkService &&
           text &&
           LINK_REGEX.test(text) &&
-          (await antilinkService.isEnabled(remoteJid))
+          (await antilinkService.isEnabled(remoteJid)) &&
+          !restrictionImmune
         ) {
           try {
             await sock.sendMessage(remoteJid, { delete: msg.key });
@@ -648,6 +950,73 @@ async function startBot(services) {
           continue;
         }
 
+        if (bankService && normalizedSender) {
+          try {
+            await bankService.settleAccount(normalizedSender);
+          } catch (error) {
+            logger?.warn({ err: error, senderJid }, 'Impossibile aggiornare l\'account BagleyBank');
+          }
+        }
+
+        // Gestione risposte ai messaggi di mercato
+        const replyTriggered = isReplyToBot(msg, botJid || sock.user?.id, trackedBotMessageIds);
+
+        // Gestione !buy e !sell [quantità] in risposta a scheda market
+        // Supporta: !buy, !buy 5, !sell, !sell 3
+        let marketReplyHandled = false;
+        if (replyTriggered && text && /^!(buy|sell)(?:\s+(\d+))?$/.test(text)) {
+          const match = text.match(/^!(buy|sell)(?:\s+(\d+))?$/);
+          if (match) {
+            const command = match[1];
+            const quantity = match[2] ? parseInt(match[2]) : 1; // Default a 1 se non specificato
+            const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+            if (quotedMessage) {
+              const quotedText = quotedMessage.conversation || quotedMessage.extendedTextMessage?.text || quotedMessage.imageMessage?.caption || '';
+              const nameMatch = quotedText.match(/^📊 (.+)$/m);
+              if (nameMatch) {
+                const itemName = nameMatch[1].trim();
+                const item = marketService.findItemByName(itemName);
+                if (item) {
+                  baseContext.parsed = { command, args: [item.categoryId.toString(), item.name, quantity.toString()] };
+                  marketReplyHandled = true;
+                } else {
+                  // Oggetto non trovato nel mercato - mostra errore
+                  const errorMsg = await sock.sendMessage(remoteJid, { text: `❌ Oggetto "${itemName}" non trovato nel mercato.` }, { quoted: msg });
+                  trackBotMessage(errorMsg);
+                  marketReplyHandled = true;
+                  continue;
+                }
+              }
+            }
+          }
+        }
+
+        // Se la risposta market è stata gestita, non processare altri comandi
+        if (marketReplyHandled) {
+          const commandResponse = await commandRegistry.handleCommand(baseContext);
+          if (commandResponse) {
+            const payloads = [];
+            if (Array.isArray(commandResponse.messages) && commandResponse.messages.length) {
+              payloads.push(...commandResponse.messages);
+            } else if (commandResponse.message) {
+              payloads.push(commandResponse.message);
+            } else if (commandResponse.text) {
+              const { text: responseText, ...rest } = commandResponse;
+              payloads.push({ text: responseText, ...rest });
+            }
+
+            if (payloads.length) {
+              const shouldQuoteOriginal = Boolean(commandResponse.replyToMessage);
+              for (const payload of payloads) {
+                const options = shouldQuoteOriginal ? { quoted: msg } : undefined;
+                const sentMessage = await sock.sendMessage(remoteJid, payload, options);
+                trackBotMessage(sentMessage);
+              }
+            }
+          }
+          continue;
+        }
+
         const commandResponse = await commandRegistry.handleCommand(baseContext);
 
         if (commandResponse) {
@@ -662,17 +1031,135 @@ async function startBot(services) {
           }
 
           if (payloads.length) {
+            const shouldQuoteOriginal = Boolean(commandResponse.replyToMessage);
             for (const payload of payloads) {
-              const sentMessage = await sock.sendMessage(remoteJid, payload, { quoted: msg });
+              const options = shouldQuoteOriginal ? { quoted: msg } : undefined;
+              const sentMessage = await sock.sendMessage(remoteJid, payload, options);
               trackBotMessage(sentMessage);
             }
             continue;
           }
         }
 
+        // Gestione risposte ai messaggi di mercato
+        if (replyTriggered && marketService && text && /^\d+$/.test(text.trim())) {
+          const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+          if (quotedMessage) {
+            const quotedText = quotedMessage.conversation ||
+                              quotedMessage.extendedTextMessage?.text ||
+                              quotedMessage.imageMessage?.caption || '';
+
+            const itemNumber = parseInt(text.trim()) - 1; // 0-based
+            let items = [];
+
+            // 1. risposta alla lista di sottocategorie
+            if (quotedText.includes('Sottocategorie di')) {
+              const catMatch = quotedText.match(/Sottocategorie di (.+?):/);
+              if (catMatch) {
+                const categoryName = catMatch[1];
+                const categories = marketService.getCategories();
+                const categoryId = parseInt(Object.keys(categories).find(id =>
+                  categories[id].name === categoryName
+                ));
+                if (categoryId) {
+                  const subids = Object.keys(marketService.getSubcategories(categoryId))
+                    .sort((a, b) => parseInt(a) - parseInt(b));
+                  const subId = subids[itemNumber];
+                  if (subId) {
+                    items = marketService.getSubcategoryItems(parseInt(categoryId), parseInt(subId), 10);
+                    if (items.length) {
+                      const lines = [
+                        `📂 ${marketService.getCategoryName(categoryId)} - ${marketService.getSubcategoryName(categoryId, subId)}:`,
+                        '',
+                        ...items.map((itm, idx) =>
+                          `${idx + 1}. ${itm.name}\n   ${formatPrice(itm.currentPrice)} ${formatChange(itm.changePercent)}`
+                        ),
+                        '',
+                        '💡 Rispondi con il numero per dettagli / trading'
+                      ];
+                      const response = { text: lines.join('\n') };
+                      const sent = await sock.sendMessage(remoteJid, response, { quoted: msg });
+                      trackBotMessage(sent);
+                      continue;
+                    }
+                  }
+                }
+              }
+            }
+
+            // 2. estrazione generica header (categoria o subcategoria)
+            const headerMatch = quotedText.match(/📂 ([^-:]+)(?: - ([^:]+))?:/);
+            if (headerMatch) {
+              const catName = headerMatch[1].trim();
+              const subName = headerMatch[2] ? headerMatch[2].trim() : null;
+              const categories = marketService.getCategories();
+              const categoryId = parseInt(Object.keys(categories).find(id =>
+                categories[id].name === catName
+              ));
+              if (categoryId) {
+                if (subName) {
+                  // item listing per sottocategoria
+                  const subids = Object.keys(marketService.getSubcategories(categoryId));
+                  const subId = subids.find(sid => marketService.getSubcategoryName(categoryId, sid) === subName);
+                  if (subId) {
+                    items = marketService.getSubcategoryItems(parseInt(categoryId), parseInt(subId), 10);
+                  }
+                } else {
+                  // item listing per categoria
+                  items = marketService.getCategoryItems(parseInt(categoryId), 10);
+                }
+              }
+            }
+
+            // 3. trending / fallback
+            if (!items.length && (quotedText.includes('📈 Bagley Market') || quotedText.includes('Oggetti di tendenza'))) {
+              if (quotedText.includes('Oggetti di tendenza')) {
+                items = marketService.getTrendingItems(10);
+              } else {
+                const categoryMatch = quotedText.match(/📂 (.+?):/);
+                if (categoryMatch) {
+                  const categoryName = categoryMatch[1];
+                  const categories = marketService.getCategories();
+                  const categoryId = parseInt(Object.keys(categories).find(id =>
+                    categories[id].name === categoryName
+                  ));
+                  if (categoryId) {
+                    items = marketService.getCategoryItems(parseInt(categoryId), 10);
+                  }
+                }
+              }
+            }
+
+              if (items[itemNumber]) {
+                const item = items[itemNumber];
+                const itemInfo = marketService.getItemInfo(item.categoryId, item.subId, item.itemId);
+
+                const lines = [
+                  `📊 ${itemInfo.name}`,
+                  '',
+                  `💰 Prezzo attuale: ${formatPrice(itemInfo.currentPrice)}`,
+                  `📈 Variazione: ${formatChange(itemInfo.changePercent)}`,
+                  `🎯 Volatilità: ${itemInfo.volatility}`,
+                  '',
+                  `📝 ${itemInfo.description}`,
+                  '',
+                  '💡 Rispondi con !buy [quantità] per acquistare direttamente',
+                  '💡 Oppure usa !buy <categoria> <oggetto> [quantità]'
+                ];
+
+                const response = {
+                  text: lines.join('\n')
+                };
+
+                const sentMessage = await sock.sendMessage(remoteJid, response, { quoted: msg });
+                trackBotMessage(sentMessage);
+                continue;
+              }
+            }
+          }
+
         const lowerText = (text || '').toLowerCase();
         const nameTriggered = lowerText.includes('bagley');
-        const replyTriggered = isReplyToBot(msg, botJid || sock.user?.id, trackedBotMessageIds);
 
         if (!nameTriggered && !replyTriggered) {
           continue;
@@ -740,7 +1227,14 @@ async function startBot(services) {
     const blacklistService = await createBlacklistService({ logger });
     const botToggleService = await createBotToggleService({ logger });
     const aiToggleService = await createAiToggleService({ logger });
+    const gamesToggleService = await createGamesToggleService({ logger });
     const silenceService = await createSilenceService({ logger });
+    const greetService = await createGreetService({ logger });
+    const antighostService = await createAntighostService({ logger });
+    const bankService = await createBankService({ logger });
+    const marketService = await createMarketService({ logger, bankService });
+    const futService = await createFutService({ logger, bankService });
+    const osintService = await createOsintService({ logger });
 
     if (!aiService.enabled) {
       logger.warn('API key OpenAI non configurata. La funzione AI sarà disattivata finché non aggiorni config/openai.json.');
@@ -759,10 +1253,18 @@ async function startBot(services) {
       blacklistService,
       botToggleService,
       aiToggleService,
-      silenceService
+      gamesToggleService,
+      silenceService,
+      greetService,
+      antighostService,
+      bankService,
+      marketService,
+      futService,
+      osintService
     });
   } catch (error) {
     logger.error({ err: error }, 'Errore fatale in fase di avvio');
     process.exitCode = 1;
   }
 })();
+

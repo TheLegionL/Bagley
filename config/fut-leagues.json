@@ -1,0 +1,716 @@
+{
+  "leagues": [
+    {
+      "id": "premier-league",
+      "name": "Premier League",
+      "country": "Inghilterra",
+      "code": "eng.1",
+      "teams": [
+        {
+          "id": "eng.bournemouth",
+          "name": "AFC Bournemouth",
+          "shortName": "BOU",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.arsenal",
+          "name": "Arsenal",
+          "shortName": "ARS",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.aston_villa",
+          "name": "Aston Villa",
+          "shortName": "AVL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.brentford",
+          "name": "Brentford",
+          "shortName": "BRE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.brighton",
+          "name": "Brighton & Hove Albion",
+          "shortName": "BHA",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.burnley",
+          "name": "Burnley",
+          "shortName": "BUR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.chelsea",
+          "name": "Chelsea",
+          "shortName": "CHE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.crystal_palace",
+          "name": "Crystal Palace",
+          "shortName": "CRY",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.everton",
+          "name": "Everton",
+          "shortName": "EVE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.fulham",
+          "name": "Fulham",
+          "shortName": "FUL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.leeds",
+          "name": "Leeds United",
+          "shortName": "LEE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.liverpool",
+          "name": "Liverpool",
+          "shortName": "LIV",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.man_city",
+          "name": "Manchester City",
+          "shortName": "MNC",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.man_utd",
+          "name": "Manchester United",
+          "shortName": "MAN",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.newcastle",
+          "name": "Newcastle United",
+          "shortName": "NEW",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.nottm_forest",
+          "name": "Nottingham Forest",
+          "shortName": "NFO",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.sunderland",
+          "name": "Sunderland",
+          "shortName": "SUN",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.tottenham",
+          "name": "Tottenham Hotspur",
+          "shortName": "TOT",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.west_ham",
+          "name": "West Ham United",
+          "shortName": "WHU",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "eng.wolverhampton",
+          "name": "Wolverhampton Wanderers",
+          "shortName": "WOL",
+          "rating": 80,
+          "players": []
+        }
+      ]
+    },
+    {
+      "id": "la-liga",
+      "name": "La Liga",
+      "country": "Spagna",
+      "code": "esp.1",
+      "teams": [
+        {
+          "id": "esp.alaves",
+          "name": "Alavés",
+          "shortName": "ALA",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.athletic_club",
+          "name": "Athletic Club",
+          "shortName": "ATH",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.atletico_madrid",
+          "name": "Atlético Madrid",
+          "shortName": "ATM",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.barcelona",
+          "name": "Barcelona",
+          "shortName": "BAR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.celta_vigo",
+          "name": "Celta Vigo",
+          "shortName": "CEL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.elche",
+          "name": "Elche",
+          "shortName": "ELC",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.espanyol",
+          "name": "Espanyol",
+          "shortName": "ESP",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.getafe",
+          "name": "Getafe",
+          "shortName": "GET",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.girona",
+          "name": "Girona",
+          "shortName": "GIR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.levante",
+          "name": "Levante",
+          "shortName": "LEV",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.mallorca",
+          "name": "Mallorca",
+          "shortName": "MLL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.osasuna",
+          "name": "Osasuna",
+          "shortName": "OSA",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.rayo_vallecano",
+          "name": "Rayo Vallecano",
+          "shortName": "RAY",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.betis_sevilla",
+          "name": "Real Betis",
+          "shortName": "BET",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.real_madrid",
+          "name": "Real Madrid",
+          "shortName": "RMA",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.real_oviedo",
+          "name": "Real Oviedo",
+          "shortName": "OVI",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.real_sociedad",
+          "name": "Real Sociedad",
+          "shortName": "RSO",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.fc_sevilla",
+          "name": "Sevilla",
+          "shortName": "SEV",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.valencia",
+          "name": "Valencia",
+          "shortName": "VAL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "esp.villarreal",
+          "name": "Villarreal",
+          "shortName": "VIL",
+          "rating": 80,
+          "players": []
+        }
+      ]
+    },
+    {
+      "id": "serie-a",
+      "name": "Serie A",
+      "country": "Italia",
+      "code": "ita.1",
+      "teams": [
+        {
+          "id": "ita.ac_milan",
+          "name": "AC Milan",
+          "shortName": "MIL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.as_roma",
+          "name": "AS Roma",
+          "shortName": "ROMA",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.atalanta",
+          "name": "Atalanta",
+          "shortName": "ATA",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.bologna",
+          "name": "Bologna",
+          "shortName": "BOL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.cagliari",
+          "name": "Cagliari",
+          "shortName": "CAG",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.como",
+          "name": "Como",
+          "shortName": "COMO",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.cremonese",
+          "name": "Cremonese",
+          "shortName": "CRE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.fiorentina",
+          "name": "Fiorentina",
+          "shortName": "FIO",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.genoa",
+          "name": "Genoa",
+          "shortName": "GEN",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.verona",
+          "name": "Hellas Verona",
+          "shortName": "VER",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.inter_milan",
+          "name": "Internazionale",
+          "shortName": "INT",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.juventus",
+          "name": "Juventus",
+          "shortName": "JUV",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.lazio_rome",
+          "name": "Lazio",
+          "shortName": "LAZ",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.lecce",
+          "name": "Lecce",
+          "shortName": "LEC",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.napoli",
+          "name": "Napoli",
+          "shortName": "NAP",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.parma",
+          "name": "Parma",
+          "shortName": "PAR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.pisa",
+          "name": "Pisa",
+          "shortName": "PIS",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.sassuolo",
+          "name": "Sassuolo",
+          "shortName": "SAS",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.torino",
+          "name": "Torino",
+          "shortName": "TOR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ita.udinese",
+          "name": "Udinese",
+          "shortName": "UDI",
+          "rating": 80,
+          "players": []
+        }
+      ]
+    },
+    {
+      "id": "bundesliga",
+      "name": "Bundesliga",
+      "country": "Germania",
+      "code": "ger.1",
+      "teams": [
+        {
+          "id": "betbrain.heidenheimer_sb",
+          "name": "1. FC Heidenheim 1846",
+          "shortName": "HDH",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.fc_union_berlin",
+          "name": "1. FC Union Berlin",
+          "shortName": "FCU",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.leverkusen",
+          "name": "Bayer Leverkusen",
+          "shortName": "B04",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.bayern_munich",
+          "name": "Bayern Munich",
+          "shortName": "MUN",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.dortmund",
+          "name": "Borussia Dortmund",
+          "shortName": "DOR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.borussia_mgladbach",
+          "name": "Borussia Mönchengladbach",
+          "shortName": "BMG",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.frankfurt",
+          "name": "Eintracht Frankfurt",
+          "shortName": "SGE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.fc_augsburg",
+          "name": "FC Augsburg",
+          "shortName": "FCA",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.1_fc_kln",
+          "name": "FC Cologne",
+          "shortName": "KOE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.hamburg",
+          "name": "Hamburg SV",
+          "shortName": "HSV",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.mainz",
+          "name": "Mainz",
+          "shortName": "M05",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.rb_leipzig",
+          "name": "RB Leipzig",
+          "shortName": "RBL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.freiburg",
+          "name": "SC Freiburg",
+          "shortName": "SCF",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.st_pauli",
+          "name": "St. Pauli",
+          "shortName": "STP",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.tsg_hoffenheim",
+          "name": "TSG Hoffenheim",
+          "shortName": "TSG",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.stuttgart",
+          "name": "VfB Stuttgart",
+          "shortName": "VFB",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.wolfsburg",
+          "name": "VfL Wolfsburg",
+          "shortName": "WOB",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "ger.werder_bremen",
+          "name": "Werder Bremen",
+          "shortName": "SVW",
+          "rating": 80,
+          "players": []
+        }
+      ]
+    },
+    {
+      "id": "ligue-1",
+      "name": "Ligue 1",
+      "country": "Francia",
+      "code": "fra.1",
+      "teams": [
+        {
+          "id": "fra.auxerre",
+          "name": "AJ Auxerre",
+          "shortName": "AUX",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.monaco",
+          "name": "AS Monaco",
+          "shortName": "MON",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.angers",
+          "name": "Angers",
+          "shortName": "ANG",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.brest",
+          "name": "Brest",
+          "shortName": "BRE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.le_havre_ac",
+          "name": "Le Havre AC",
+          "shortName": "HAC",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.lens",
+          "name": "Lens",
+          "shortName": "RCL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.lille",
+          "name": "Lille",
+          "shortName": "LILL",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.lorient",
+          "name": "Lorient",
+          "shortName": "LOR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.lyon",
+          "name": "Lyon",
+          "shortName": "LYON",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.marseille",
+          "name": "Marseille",
+          "shortName": "OLM",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.metz",
+          "name": "Metz",
+          "shortName": "METZ",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.nantes",
+          "name": "Nantes",
+          "shortName": "NAN",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.nice",
+          "name": "Nice",
+          "shortName": "NICE",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "betbrain.paris_fc",
+          "name": "Paris FC",
+          "shortName": "PAR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.psg",
+          "name": "Paris Saint-Germain",
+          "shortName": "PSG",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.rennes",
+          "name": "Stade Rennais",
+          "shortName": "REN",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.strasbourg",
+          "name": "Strasbourg",
+          "shortName": "STR",
+          "rating": 80,
+          "players": []
+        },
+        {
+          "id": "fra.toulouse",
+          "name": "Toulouse",
+          "shortName": "TOU",
+          "rating": 80,
+          "players": []
+        }
+      ]
+    }
+  ]
+}

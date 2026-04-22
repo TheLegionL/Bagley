@@ -1,4 +1,5 @@
 const path = require('node:path');
+const dns = require('node:dns');
 const fs = require('fs-extra');
 const { CONFIG_DIR } = require('./config');
 const { normalizeJid } = require('./permissions');
@@ -83,7 +84,19 @@ function formatRelativeTime(timestamp) {
   return diffDays === 1 ? '1 giorno fa' : `${diffDays} giorni fa`;
 }
 
+function preferIpv4(logger) {
+  if (typeof dns.setDefaultResultOrder !== 'function') {
+    return;
+  }
+  try {
+    dns.setDefaultResultOrder('ipv4first');
+  } catch (error) {
+    logger?.debug?.({ err: error }, 'Impossibile forzare l\'ordine DNS per IPv4');
+  }
+}
+
 function createLastfmService({ logger }) {
+  preferIpv4(logger);
   const apiKey = loadApiKey(logger);
 
   const getNormalizedJid = (jid) => normalizeJid(jid);
@@ -152,6 +165,114 @@ function createLastfmService({ logger }) {
       const mappings = await readMappings(logger);
       return mappings[normalizedJid] || null;
     },
+    async getTopAlbums(username, options = {}) {
+      if (!apiKey) {
+        throw new Error('API key Last.fm non configurata.');
+      }
+      const user = typeof username === 'string' ? username.trim() : '';
+      if (!user) {
+        throw new Error('Specificare un username Last.fm valido.');
+      }
+      const limitOption = Number(options.limit);
+      const limit = Number.isFinite(limitOption) ? Math.min(Math.max(limitOption, 1), 50) : 9;
+      const period =
+        typeof options.period === 'string' && options.period.trim() ? options.period.trim() : '1month';
+
+      const url = new URL('https://ws.audioscrobbler.com/2.0/');
+      url.searchParams.set('method', 'user.gettopalbums');
+      url.searchParams.set('user', user);
+      url.searchParams.set('api_key', apiKey);
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('limit', String(limit));
+      url.searchParams.set('period', period);
+      url.searchParams.set('_', Date.now().toString());
+
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error(`Last.fm ha risposto con status ${response.status}`);
+      }
+
+      const payload = await response.json();
+      let albums = [];
+      if (Array.isArray(payload?.topalbums?.album)) {
+        albums = payload.topalbums.album;
+      } else if (payload?.topalbums?.album) {
+        albums = [payload.topalbums.album];
+      }
+
+      return albums.slice(0, limit).map((album) => {
+        const artistName = album?.artist?.name || album?.artist?.['#text'] || 'Sconosciuto';
+        const albumName = album?.name || '??';
+        const playcountRaw = album?.playcount;
+        const playcount = playcountRaw != null ? parseInt(playcountRaw, 10) || 0 : 0;
+        const image = Array.isArray(album?.image)
+          ? album.image.map((img) => (img ? img['#text'] : null)).filter(Boolean).pop()
+          : null;
+        return {
+          name: albumName,
+          artist: artistName,
+          playcount,
+          url: album?.url || '',
+          image
+        };
+      });
+    },
+
+    async getTopArtists(username, options = {}) {
+      if (!apiKey) {
+        throw new Error('API key Last.fm non configurata.');
+      }
+      const user = typeof username === 'string' ? username.trim() : '';
+      if (!user) {
+        throw new Error('Specificare un username Last.fm valido.');
+      }
+      const limitOption = Number(options.limit);
+      const limit = Number.isFinite(limitOption) ? Math.min(Math.max(limitOption, 1), 50) : 10;
+      const period =
+        typeof options.period === 'string' && options.period.trim() ? options.period.trim() : '1month';
+
+      const url = new URL('https://ws.audioscrobbler.com/2.0/');
+      url.searchParams.set('method', 'user.gettopartists');
+      url.searchParams.set('user', user);
+      url.searchParams.set('api_key', apiKey);
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('limit', String(limit));
+      url.searchParams.set('period', period);
+      url.searchParams.set('_', Date.now().toString());
+
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error(`Last.fm ha risposto con status ${response.status}`);
+      }
+
+      const payload = await response.json();
+      let artists = [];
+      if (Array.isArray(payload?.topartists?.artist)) {
+        artists = payload.topartists.artist;
+      } else if (payload?.topartists?.artist) {
+        artists = [payload.topartists.artist];
+      }
+
+      return artists.slice(0, limit).map((artist) => {
+        const name = artist?.name || 'Sconosciuto';
+        const playcountRaw = artist?.playcount;
+        const playcount = playcountRaw != null ? parseInt(playcountRaw, 10) || 0 : 0;
+        const listenersRaw = artist?.listeners;
+        const listeners = listenersRaw != null ? parseInt(listenersRaw, 10) || 0 : 0;
+        const image = Array.isArray(artist?.image)
+          ? artist.image.map((img) => (img ? img['#text'] : null)).filter(Boolean).pop()
+          : null;
+
+        return {
+          name,
+          playcount,
+          listeners,
+          url: artist?.url || '',
+          image
+        };
+      });
+    },
+
     async getCurrentTrack(username) {
       if (!apiKey) {
         throw new Error('API key Last.fm non configurata.');
@@ -211,3 +332,5 @@ module.exports = {
   LASTFM_CONFIG_FILE,
   LASTFM_USERS_FILE
 };
+
+
