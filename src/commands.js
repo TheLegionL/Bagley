@@ -3147,6 +3147,11 @@ const resolveSingleCommandTarget = (context) => {
       minLevel: PermissionLevel.ADMIN,
       description: 'Assegna un warn a un membro; al terzo warn viene espulso.',
       handler: async (context) => {
+        // Verifica esplicita del livello di permesso
+        if (context.permissionLevel < PermissionLevel.ADMIN) {
+          return { text: 'Non hai i permessi per usare questo comando. Solo admin e superiori possono assegnare warn.' };
+        }
+
         if (!context.remoteJid?.endsWith('@g.us')) {
           return { text: 'Il comando warn funziona solo nei gruppi.' };
         }
@@ -3170,6 +3175,11 @@ const resolveSingleCommandTarget = (context) => {
       minLevel: PermissionLevel.ADMIN,
       description: 'Rimuove un singolo warn dall\'utente indicato.',
       handler: async (context) => {
+        // Verifica esplicita del livello di permesso
+        if (context.permissionLevel < PermissionLevel.ADMIN) {
+          return { text: 'Non hai i permessi per usare questo comando. Solo admin e superiori possono rimuovere warn.' };
+        }
+
         if (!context.remoteJid?.endsWith('@g.us')) {
           return { text: 'Il comando delwarn funziona solo nei gruppi.' };
         }
@@ -3222,6 +3232,11 @@ const resolveSingleCommandTarget = (context) => {
       minLevel: PermissionLevel.ADMIN,
       description: 'Azzera tutti i warn di un utente.',
       handler: async (context) => {
+        // Verifica esplicita del livello di permesso
+        if (context.permissionLevel < PermissionLevel.ADMIN) {
+          return { text: 'Non hai i permessi per usare questo comando. Solo admin e superiori possono azzerare i warn.' };
+        }
+
         if (!context.remoteJid.endsWith('@g.us')) {
           return { text: 'Il comando warnclear funziona solo nei gruppi.' };
         }
