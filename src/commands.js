@@ -2938,11 +2938,29 @@ const resolveSingleCommandTarget = (context) => {
         const lines = ['🏓 Pong!', `- Latenza stimata: ${latency}ms`, `- Stato socket: ${status}`];
         return {
           text: buildPingCard({ lines }),
-          buttons: [
-            { buttonId: '.ping', buttonText: { displayText: 'Aggiorna' }, type: 1 },
-            { buttonId: '.ping details', buttonText: { displayText: 'Dettagli' }, type: 1 }
-          ],
-          headerType: 1
+          templateMessage: {
+            hydratedFourRowTemplate: {
+              templateId: 'ping_buttons',
+              hydratedContentText: buildPingCard({ lines }),
+              hydratedFooterText: 'ℹ️ Usa .ping per un check rapido',
+              buttons: [
+                {
+                  index: '0',
+                  quickReplyButton: {
+                    displayText: 'Aggiorna',
+                    id: '.ping'
+                  }
+                },
+                {
+                  index: '1',
+                  quickReplyButton: {
+                    displayText: 'Dettagli',
+                    id: '.ping details'
+                  }
+                }
+              ]
+            }
+          }
         };
       }
     },
