@@ -532,7 +532,7 @@ async function createFutService({ logger, bankService }) {
       ...abxLines,
       ...extraLines,
       '',
-      'ℹ️ Scommetti con `!bet <opzione> <importo>` (es. `!bet over3.5 500`).'
+      'ℹ️ Scommetti con `.bet <opzione> <importo>` (es. `.bet over3.5 500`).'
     ].join('\n');
   };
 
@@ -803,7 +803,7 @@ async function createFutService({ logger, bankService }) {
       const group = ensureGroupState(groupId);
       const match = group.activeMatch;
       if (!match) {
-        return { error: 'Non c\'è nessun match disponibile. Usa !match per generarne uno.' };
+        return { error: 'Non c'è nessun match disponibile. Usa .match per generarne uno.' };
       }
       if (match.status !== 'pending' || Date.now() >= match.startAt) {
         return { error: 'Le scommesse sono chiuse. Attendi il prossimo match.' };

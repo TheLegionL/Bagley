@@ -1144,7 +1144,7 @@ async function startBot(services) {
                   `📝 ${itemInfo.description}`,
                   '',
                   '💡 Rispondi con !buy [quantità] per acquistare direttamente',
-                  '💡 Oppure usa !buy <categoria> <oggetto> [quantità]'
+                  '💡 Oppure usa .buy <categoria> <oggetto> [quantità]'
                 ];
 
                 const response = {

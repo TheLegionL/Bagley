@@ -187,7 +187,7 @@ function parseCommand(text) {
   const trimmed = text.trim();
   const prefix = trimmed[0];
 
-  if (prefix !== '!' && prefix !== '/') {
+  if (prefix !== '.' && prefix !== '/') {
     return null;
   }
 
@@ -1400,7 +1400,7 @@ function createCommandRegistry(dependencies) {
     const mode = context.parsed?.args?.[0]?.toLowerCase();
     if (mode !== 'on' && mode !== 'off') {
       return {
-        text: `Specificami se vuoi attivare o disattivare: usa \`!${commandLabel} on\` o \`!${commandLabel} off\`.`
+        text: `Specificami se vuoi attivare o disattivare: usa \`.${commandLabel} on\` o \`.${commandLabel} off\`.`
       };
     }
 
@@ -2342,7 +2342,7 @@ const resolveSingleCommandTarget = (context) => {
 
         const { contextInfo } = extractQuotedMessageInfo(context);
         if (!contextInfo?.stanzaId) {
-          return wrap({ text: 'Rispondi al messaggio che vuoi cancellare e poi usa !del.' });
+          return wrap({ text: 'Rispondi al messaggio che vuoi cancellare e poi usa .del.' });
         }
 
         const participant = contextInfo.participant || undefined;
@@ -2379,7 +2379,7 @@ const resolveSingleCommandTarget = (context) => {
         const details = context.parsed?.args?.join(' ').trim();
         if (!details) {
           return {
-            text: 'Spiegami cosa non funziona: usa !rep seguito da una breve descrizione del bug.'
+            text: 'Spiegami cosa non funziona: usa .rep seguito da una breve descrizione del bug.'
           };
         }
 
@@ -2467,7 +2467,7 @@ const resolveSingleCommandTarget = (context) => {
           await bankService.settleAccount(senderJid);
           const account = await bankService.getAccount(senderJid);
           if (!account) {
-            return bankError('Non hai nessun conto da eliminare. Usa prima !account crea.');
+            return bankError('Non hai nessun conto da eliminare. Usa prima .account crea.');
           }
           if (account.loan) {
             return bankError('Estingui prima il prestito attivo, poi elimina il conto.');
@@ -2481,14 +2481,14 @@ const resolveSingleCommandTarget = (context) => {
             [
               `👤 Titolare: ${holderLabel}`,
               '📦 Storico transazioni rimosso con successo.',
-              'Puoi riaprire tutto quando vuoi con `!account crea`.'
+              'Puoi riaprire tutto quando vuoi con `.account crea`.'
             ],
             { mentions: [context.senderJid], footer: '👋 A presto da BagleyBank' }
           );
         }
         return bankResponse("ℹ️ Scegli un'azione", [
-          'Usa `!account crea` per aprire un conto.',
-          'Usa `!account elimina` per chiuderlo definitivamente.'
+          'Usa `.account crea` per aprire un conto.',
+          'Usa `.account elimina` per chiuderlo definitivamente.'
         ]);
       }
     },
@@ -2509,7 +2509,7 @@ const resolveSingleCommandTarget = (context) => {
         await bankService.settleAccount(senderJid);
         const account = await bankService.getAccount(senderJid);
         if (!account) {
-          return bankError('Non hai un conto BagleyBank. Aprilo con `!account crea`.');
+          return bankError('Non hai un conto BagleyBank. Aprilo con `.account crea`.');
         }
         const holderLabel = await buildMentionLabel(context.senderJid, context);
         const lines = [
@@ -2545,7 +2545,7 @@ const resolveSingleCommandTarget = (context) => {
           return bankError('Specifica a chi vuoi fare la donazione (menzione, numero o risposta).');
         }
         if (!amount) {
-          return bankError('Indica l\'importo da donare (es. `!dona @utente 250`).');
+          return bankError('Indica l\'importo da donare (es. `.dona @utente 250`).');
         }
         await bankService.settleAccount(senderJid);
         await bankService.settleAccount(targetInfo.jid);
@@ -2602,7 +2602,7 @@ const resolveSingleCommandTarget = (context) => {
           return bankError('Specifica quale account vuoi aumentare (me, menzione o numero).');
         }
         if (!amount) {
-          return bankError('Indica l\'importo da aggiungere (es. `!aumento me 1000`).');
+          return bankError('Indica l\'importo da aggiungere (es. `.aumento me 1000`).');
         }
         await bankService.settleAccount(targetJid);
         const result = await bankService.adjustBalance(targetJid, amount);
@@ -2635,7 +2635,7 @@ const resolveSingleCommandTarget = (context) => {
         }
         const amount = parseAmountValue(context.parsed.args[0]);
         if (!amount) {
-          return bankError('Indica quanto vuoi richiedere (es. `!prestito 2500`).');
+          return bankError('Indica quanto vuoi richiedere (es. `.prestito 2500`).');
         }
         const senderJid = normalizeJid(context.senderJid);
         if (!senderJid) {
@@ -2644,7 +2644,7 @@ const resolveSingleCommandTarget = (context) => {
         await bankService.settleAccount(senderJid);
         const account = await bankService.getAccount(senderJid);
         if (!account) {
-          return bankError('Apri prima un conto BagleyBank con `!account crea`.');
+          return bankError('Apri prima un conto BagleyBank con `.account crea`.');
         }
         const result = await bankService.grantLoan(senderJid, amount);
         if (result.error) {
@@ -2659,7 +2659,7 @@ const resolveSingleCommandTarget = (context) => {
             `🧾 Totale da restituire: ${formatBankAmount(loanInfo.totalDue)} (12 rate giornaliere)`,
             `💳 Rata giornaliera: ${formatBankAmount(loanInfo.installmentAmount)}`,
             `⏰ Prossimo addebito automatico: ${formatBankDate(loanInfo.nextDebitAt)}`,
-            '💡 Usa !paga per estinguere manualmente in qualsiasi momento.'
+            '💡 Usa .paga per estinguere manualmente in qualsiasi momento.'
           ],
           { mentions: [context.senderJid] }
         );
@@ -2677,7 +2677,7 @@ const resolveSingleCommandTarget = (context) => {
         }
         const amount = parseAmountValue(context.parsed.args[0]);
         if (!amount) {
-          return bankError('Indica quanto vuoi versare (es. `!paga 500`).');
+          return bankError('Indica quanto vuoi versare (es. `.paga 500`).');
         }
         const senderJid = normalizeJid(context.senderJid);
         if (!senderJid) {
@@ -2686,7 +2686,7 @@ const resolveSingleCommandTarget = (context) => {
         await bankService.settleAccount(senderJid);
         const account = await bankService.getAccount(senderJid);
         if (!account) {
-          return bankError('Apri prima un conto BagleyBank con `!account crea`.');
+          return bankError('Apri prima un conto BagleyBank con `.account crea`.');
         }
         if (!account.loan) {
           return bankError('Non hai prestiti attivi da estinguere.');
@@ -2930,7 +2930,7 @@ const resolveSingleCommandTarget = (context) => {
             text: buildPingCard({
               title: '💻 System Stats',
               lines: detailLines,
-              footer: 'ℹ️ Usa !ping per un check rapido'
+              footer: 'ℹ️ Usa .ping per un check rapido'
             })
           };
         }
@@ -2939,8 +2939,8 @@ const resolveSingleCommandTarget = (context) => {
         return {
           text: buildPingCard({ lines }),
           buttons: [
-            { buttonId: '!ping', buttonText: { displayText: 'Aggiorna' }, type: 1 },
-            { buttonId: '!ping details', buttonText: { displayText: 'Dettagli' }, type: 1 }
+            { buttonId: '.ping', buttonText: { displayText: 'Aggiorna' }, type: 1 },
+            { buttonId: '.ping details', buttonText: { displayText: 'Dettagli' }, type: 1 }
           ],
           headerType: 1
         };
@@ -3716,7 +3716,7 @@ const resolveSingleCommandTarget = (context) => {
         if (!track) {
           const lines = [
             `${label} non ha scrobble recenti.`,
-            'Magari prova a riprodurre qualcosa e ripeti `!cur`.'
+            'Magari prova a riprodurre qualcosa e ripeti `.cur`.'
           ];
           return musicResponse(lines, { mentions: mentionList });
         }
@@ -4578,11 +4578,11 @@ ${item.url}`);
             '',
             categoryList,
             '',
-            '💡 Usa !market <numero_categoria> per esplorare'
+            '💡 Usa .market <numero_categoria> per esplorare'
           ]);
         }
 
-        // !market - Mostra trending items
+        // .market - Mostra trending items
         if (!categoryId) {
           const trendingItems = marketService.getTrendingItems(10);
           if (!trendingItems.length) {
@@ -4615,7 +4615,7 @@ ${item.url}`);
             '',
             categoryList,
             '',
-            '💡 Usa !market <numero_categoria> per esplorare'
+            '💡 Usa .market <numero_categoria> per esplorare'
           ]);
         }
 
@@ -4657,8 +4657,8 @@ ${item.url}`);
             '',
             `📝 ${itemInfo.description}`,
             '',
-            '💡 Usa !buy <categoria> <oggetto> [quantità] per acquistare',
-            '💡 Usa !sell <categoria> <oggetto> [quantità] per vendere'
+            '💡 Usa .buy <categoria> <oggetto> [quantità] per acquistare',,
+            '💡 Usa .sell <categoria> <oggetto> [quantità] per vendere'
           ];
 
           return marketResponse(lines);
@@ -4700,8 +4700,8 @@ ${item.url}`);
           return inventoryResponse([
             '🎒 Il tuo inventario è vuoto!',
             '',
-            '💡 Usa !market per esplorare gli oggetti disponibili',
-            '💡 Acquista oggetti con !buy <categoria> <oggetto> [quantità]'
+            '💡 Usa .market per esplorare gli oggetti disponibili',,
+            '💡 Acquista oggetti con .buy <categoria> <oggetto> [quantità]'
           ]);
         }
 
@@ -4961,7 +4961,7 @@ ${item.url}`);
         }
 
         if (!targetJid) {
-          return marketResponse('Utente non trovato. Usa !regala @nome o !regala numero');
+          return marketResponse('Utente non trovato. Usa .regala @nome o .regala numero');;
         }
 
         const category = marketService.getCategories()[parseInt(categoryId)];
@@ -5027,7 +5027,7 @@ ${item.url}`);
         }
 
         if (!targetJid) {
-          return marketResponse('Utente non trovato. Usa !vendiutente @nome categoria oggetto prezzo');
+          return marketResponse('Utente non trovato. Usa .vendiutente @nome categoria oggetto prezzo');;
         }
 
         const category = marketService.getCategories()[parseInt(categoryId)];
@@ -5359,7 +5359,7 @@ ${item.url}`);
 
         if (context.permissionLevel < PermissionLevel.OWNER) {
           return wrap({
-            text: 'Solo l\'owner può modificare la blacklist da qui. Usa !marcus per aggiunte rapide.'
+            text: 'Solo l\'owner può modificare la blacklist da qui. Usa .marcus per aggiunte rapide.'
           });
         }
 
@@ -5753,7 +5753,7 @@ ${item.url}`);
         await bankService.settleAccount(senderJid);
         const account = await bankService.getAccount(senderJid);
         if (!account) {
-          return bankError('Apri prima un conto BagleyBank con `!account crea`.');
+          return bankError('Apri prima un conto BagleyBank con `.account crea`.');
         }
         if (account.balance < amount) {
           return bankError('Saldo insufficiente per questa puntata.');
@@ -6429,7 +6429,7 @@ ${item.url}`);
     const command = commandMap.get(parsed.command);
     if (!command) {
       return {
-        text: 'Comando non riconosciuto. Usa !help per la lista completa.'
+        text: 'Comando non riconosciuto. Usa .help per la lista completa.'
       };
     }
 

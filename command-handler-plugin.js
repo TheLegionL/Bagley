@@ -6,7 +6,7 @@ function parseCommand(text) {
   const trimmed = text.trim();
   const prefix = trimmed[0];
 
-  if (prefix !== '!' && prefix !== '/') {
+  if (prefix !== '.' && prefix !== '/') {
     return null;
   }
 
@@ -36,7 +36,7 @@ function createCommandHandler(commandList) {
     const command = commandMap.get(parsed.command);
     if (!command) {
       return {
-        text: 'Comando non riconosciuto. Usa !help per la lista completa.'
+        text: 'Comando non riconosciuto. Usa .help per la lista completa.'
       };
     }
 

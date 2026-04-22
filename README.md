@@ -46,24 +46,24 @@ Le credenziali di sessione vengono salvate nella cartella `auth_info_multi` (esc
 
 ## Comandi disponibili
 
-I comandi si eseguono con il prefisso `!`. L'elenco che segue indica il grado minimo necessario.
+I comandi si eseguono con il prefisso `.`. L'elenco che segue indica il grado minimo necessario.
 
 | Comando                         | Grado | Descrizione                                                         |
 |---------------------------------|-------|---------------------------------------------------------------------|
-| `!help`                         | 0     | Mostra i comandi disponibili per il proprio grado.                  |
-| `!grade`                        | 0     | Mostra il livello di permessi dell'utente.                          |
-| `!whitelist list`               | 2     | Visualizza la whitelist attuale con menzioni e indici.              |
-| `!whitelist add @utente`        | 3     | Aggiunge uno o più utenti alla whitelist.                           |
-| `!whitelist remove 2 @utente`   | 3     | Rimuove utenti usando indici, menzioni o JID.                       |
-| `!whitelist clear`              | 3     | Svuota completamente la whitelist.                                  |
-| `!reload whitelist`             | 3     | Ricarica la whitelist dal file sul disco.                           |
-| `!promote /promote @utente`     | 1     | Promuove gli utenti indicati a admin del gruppo.                    |
-| `!demote /demote @utente`       | 1     | Rimuove i privilegi admin dagli utenti indicati.                    |
-| `!kick /kick @utente`           | 1     | Espelle gli utenti menzionati dal gruppo.                           |
-| `!ban @utente`                  | 1     | Rimuove gli utenti menzionati dal gruppo (richiede admin WhatsApp). |
+| `.help`                         | 0     | Mostra i comandi disponibili per il proprio grado.                  |
+| `.grade`                        | 0     | Mostra il livello di permessi dell'utente.                          |
+| `.whitelist list`               | 2     | Visualizza la whitelist attuale con menzioni e indici.              |
+| `.whitelist add @utente`        | 3     | Aggiunge uno o più utenti alla whitelist.                           |
+| `.whitelist remove 2 @utente`   | 3     | Rimuove utenti usando indici, menzioni o JID.                       |
+| `.whitelist clear`              | 3     | Svuota completamente la whitelist.                                  |
+| `.reload whitelist`             | 3     | Ricarica la whitelist dal file sul disco.                           |
+| `.promote /promote @utente`     | 1     | Promuove gli utenti indicati a admin del gruppo.                    |
+| `.demote /demote @utente`       | 1     | Rimuove i privilegi admin dagli utenti indicati.                    |
+| `.kick /kick @utente`           | 1     | Espelle gli utenti menzionati dal gruppo.                           |
+| `.ban @utente`                  | 1     | Rimuove gli utenti menzionati dal gruppo (richiede admin WhatsApp). |
 
 È possibile usare JID testuali al posto delle menzioni per i comandi che accettano utenti.
-Per `!whitelist remove` puoi anche indicare solo l'indice mostrato da `!whitelist list` (es. `!whitelist remove 2`).
+Per `.whitelist remove` puoi anche indicare solo l'indice mostrato da `.whitelist list` (es. `.whitelist remove 2`).
 
 ## Integrazione AI
 
@@ -73,8 +73,8 @@ Per `!whitelist remove` puoi anche indicare solo l'indice mostrato da `!whitelis
 
 ## Consigli operativi
 
-- Assicurarsi che Bagley sia admin nel gruppo per poter eseguire operazioni come `!ban`.
-- Aggiornare `config/whitelist.json` con prudenza: il file è caricato in memoria e serve il comando `!reload whitelist` per rilevare modifiche manuali.
+- Assicurarsi che Bagley sia admin nel gruppo per poter eseguire operazioni come `.ban`.
+- Aggiornare `config/whitelist.json` con prudenza: il file è caricato in memoria e serve il comando `.reload whitelist` per rilevare modifiche manuali.
 - In caso di problemi con l'autenticazione, eliminare la cartella `auth_info_multi` e ripetere la scansione del QR code.
 
 ## BagleyBank (valuta ฿)
@@ -83,26 +83,26 @@ Il sistema economico interno usa la valuta `฿` e salva i dati in `config/bank.
 
 Comandi principali (grado minimo 0 salvo diversa indicazione):
 
-- `!account crea|elimina` crea o chiude il tuo conto (con bonus iniziale di ฿5000).
-- `!saldo` mostra il saldo, eventuali prestiti in corso e la prossima rata automatica.
-- `!dona @utente importo` trasferisce fondi a un altro conto.
-- `!aumento <utente|me> importo` (grado 1) ricarica un conto.
-- `!prestito importo` richiede un prestito a interesse variabile e lo accredita subito.
-- `!paga importo` versa manualmente una rata per estinguere più velocemente il prestito.
+- `.account crea|elimina` crea o chiude il tuo conto (con bonus iniziale di ฿5000).
+- `.saldo` mostra il saldo, eventuali prestiti in corso e la prossima rata automatica.
+- `.dona @utente importo` trasferisce fondi a un altro conto.
+- `.aumento <utente|me> importo` (grado 1) ricarica un conto.
+- `.prestito importo` richiede un prestito a interesse variabile e lo accredita subito.
+- `.paga importo` versa manualmente una rata per estinguere più velocemente il prestito.
 
 I prestiti sono ripagati in 10 rate giornaliere automatiche; il bot prova a prelevare ogni giorno alle 00:00.
 
-## Minigioco !fut con dati ESPN
+## Minigioco .fut con dati ESPN
 
-Il comando `!fut` apre il centro scommesse Bagley FUT. Tutte le vincite vengono accreditate su BagleyBank.
+Il comando `.fut` apre il centro scommesse Bagley FUT. Tutte le vincite vengono accreditate su BagleyBank.
 
 Comandi disponibili:
 
-- `!camp <numero>` seleziona uno dei campionati (Premier League, La Liga, Serie A, Bundesliga, Ligue 1).
-- `!match` genera/mostra il match virtuale corrente del gruppo.
-- `!bet <giocata> <importo>` piazza una puntata (A/B/X, over/under gol, cartellini, tiri, corner, GG/NG, marcatore, risultato esatto, ecc.).
-- `!history` visualizza gli ultimi match simulati nel gruppo.
-- `!leaderboard [global]` mostra la classifica dei migliori scommettitori del gruppo o globale.
+- `.camp <numero>` seleziona uno dei campionati (Premier League, La Liga, Serie A, Bundesliga, Ligue 1).
+- `.match` genera/mostra il match virtuale corrente del gruppo.
+- `.bet <giocata> <importo>` piazza una puntata (A/B/X, over/under gol, cartellini, tiri, corner, GG/NG, marcatore, risultato esatto, ecc.).
+- `.history` visualizza gli ultimi match simulati nel gruppo.
+- `.leaderboard [global]` mostra la classifica dei migliori scommettitori del gruppo o globale.
 
 Il bot crea quote dinamiche basate su “forza” squadra + un fattore random, simula il risultato allo scadere del countdown e accredita automaticamente i vincitori (al netto di una piccola fee di casa).
 Ogni gara dura circa due minuti reali: dopo il kick-off riceverai aggiornamenti live (gol, occasioni, cartellini, risse o invasioni di campo, supplementari) fino al triplice fischio virtuale.
