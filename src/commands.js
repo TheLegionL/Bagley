@@ -2938,25 +2938,29 @@ const resolveSingleCommandTarget = (context) => {
         const lines = ['🏓 Pong!', `- Latenza stimata: ${latency}ms`, `- Stato socket: ${status}`];
         return {
           text: buildPingCard({ lines }),
-          templateMessage: {
-            hydratedFourRowTemplate: {
-              templateId: 'ping_buttons',
-              hydratedContentText: buildPingCard({ lines }),
-              hydratedFooterText: 'ℹ️ Usa .ping per un check rapido',
+          interactiveMessage: {
+            header: {
+              title: '🏓 Ping',
+              subtitle: `${latency}ms`,
+              hasMediaAttachment: false
+            },
+            body: { text: buildPingCard({ lines }) },
+            footer: { text: 'ℹ️ Usa .ping per un check rapido' },
+            nativeFlowMessage: {
               buttons: [
                 {
-                  index: '0',
-                  quickReplyButton: {
-                    displayText: 'Aggiorna',
+                  name: 'quick_reply',
+                  buttonParamsJson: JSON.stringify({
+                    display_text: 'Aggiorna',
                     id: '.ping'
-                  }
+                  })
                 },
                 {
-                  index: '1',
-                  quickReplyButton: {
-                    displayText: 'Dettagli',
+                  name: 'quick_reply',
+                  buttonParamsJson: JSON.stringify({
+                    display_text: 'Dettagli',
                     id: '.ping details'
-                  }
+                  })
                 }
               ]
             }
