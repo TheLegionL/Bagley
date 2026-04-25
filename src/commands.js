@@ -5749,7 +5749,20 @@ ${item.url}`);
         }
 
         const resolved = resolveQuotedMedia(quoted);
-        if (!resolved || !['image', 'video', 'ptv'].includes(resolved.type)) {
+        if (!resolved) {
+          return wrap({ text: 'Il messaggio citato non è una foto o un video valido.' });
+        }
+
+        const isDocumentImage = resolved.type === 'document' && String(resolved.message?.mimetype || '').startsWith('image/');
+        const isDocumentVideo = resolved.type === 'document' && String(resolved.message?.mimetype || '').startsWith('video/');
+        const effectiveType =
+          resolved.type === 'image' || isDocumentImage
+            ? 'image'
+            : resolved.type === 'video' || resolved.type === 'ptv' || isDocumentVideo
+            ? 'video'
+            : null;
+
+        if (!effectiveType) {
           return wrap({ text: 'Il messaggio citato non è una foto o un video valido.' });
         }
 
@@ -5761,9 +5774,9 @@ ${item.url}`);
         };
 
         const message =
-          resolved.type === 'image'
+          resolved.type === 'image' || isDocumentImage
             ? { imageMessage: resolved.message }
-            : resolved.type === 'video'
+            : resolved.type === 'video' || isDocumentVideo
             ? { videoMessage: resolved.message }
             : { ptvMessage: resolved.message };
 
@@ -5786,7 +5799,10 @@ ${item.url}`);
           return wrap({ text: 'WhatsApp non mi ha consegnato il media richiesto.' });
         }
 
-        const stickerBuffer = await buildStickerBuffer(buffer, resolved.type === 'image' ? 'image' : 'video');
+        const stickerBuffer = await buildStickerBuffer(
+          buffer,
+          resolved.type === 'image' || isDocumentImage ? 'image' : 'video'
+        );
         if (!stickerBuffer) {
           return wrap({ text: 'Ho avuto problemi a generare lo sticker. Assicurati che ffmpeg sia installato per i video.' });
         }
