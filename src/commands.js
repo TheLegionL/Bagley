@@ -2773,16 +2773,21 @@ const resolveSingleCommandTarget = (context) => {
 
         const customText = context.parsed.args.join(' ').trim();
         const contextInfo = extractContextInfo(context.message);
+        const hasQuotedMedia = Boolean(contextInfo?.quotedMessage && resolveQuotedMedia(contextInfo.quotedMessage));
         let outputText = customText;
 
-        if (contextInfo?.quotedMessage) {
-          const quotedText = extractMessageText({ message: contextInfo.quotedMessage })?.trim();
-          if (quotedText) {
-            outputText = quotedText;
+        if (!customText && contextInfo?.quotedMessage) {
+          if (hasQuotedMedia) {
+            outputText = '';
+          } else {
+            const quotedText = extractMessageText({ message: contextInfo.quotedMessage })?.trim();
+            if (quotedText) {
+              outputText = quotedText;
+            }
           }
         }
 
-        if (!outputText) {
+        if (!outputText && !hasQuotedMedia) {
           outputText = 'Convocazione generale. Tutti allineati, pezzenti.';
         }
 
