@@ -1,0 +1,42 @@
+{
+  "name": "ai-plugin-universale",
+  "version": "1.0.0",
+  "description": "Plugin universale per l'integrazione di funzionalità AI basate su OpenAI in chatbot WhatsApp e altre piattaforme",
+  "main": "ai-plugin.js",
+  "scripts": {
+    "test": "node ai-plugin-example.js",
+    "example": "node ai-plugin-example.js"
+  },
+  "keywords": [
+    "ai",
+    "openai",
+    "chatbot",
+    "whatsapp",
+    "plugin",
+    "intelligenza-artificiale",
+    "trascrizione-audio",
+    "generazione-risposte"
+  ],
+  "author": "Bagley AI Team",
+  "license": "MIT",
+  "dependencies": {
+    "openai": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-repo/ai-plugin-universale.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-repo/ai-plugin-universale/issues"
+  },
+  "homepage": "https://github.com/your-repo/ai-plugin-universale#readme",
+  "files": [
+    "ai-plugin.js",
+    "AI_PLUGIN_README.md",
+    "ai-plugin-example.js"
+  ]
+}</content>
+<parameter name="filePath">c:\Users\Dy\Desktop\bot-bagley-baileys\ai-plugin-package.json

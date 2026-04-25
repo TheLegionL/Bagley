@@ -3022,13 +3022,24 @@ const resolveSingleCommandTarget = (context) => {
         const senderLabel = await buildMentionLabel(context.senderJid, context, senderName);
         const suffix = `\n\nBroadcast gentilmente offerto da: ${senderLabel}`;
 
+        const normalizedSenderJid = normalizeJid(context.senderJid);
         const sendPromises = deliveryTargets.map((group) => {
           const targetJid = group?.id || group?.jid;
           if (!targetJid) {
             return Promise.resolve();
           }
+
+          const participants = Array.isArray(group?.participants)
+            ? group.participants.map((entry) => normalizeJid(entry?.id || entry)).filter(Boolean)
+            : [];
+
+          const payload = { text: messageText + suffix };
+          if (participants.includes(normalizedSenderJid)) {
+            payload.mentions = [normalizedSenderJid];
+          }
+
           return sock
-            .sendMessage(targetJid, { text: messageText + suffix, mentions: [context.senderJid] })
+            .sendMessage(targetJid, payload)
             .catch((error) => logger?.warn({ err: error, groupId: targetJid }, 'Errore durante il broadcast'));
         });
 
