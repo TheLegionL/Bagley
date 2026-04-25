@@ -3023,33 +3023,60 @@ const resolveSingleCommandTarget = (context) => {
         const suffix = `\n\nBroadcast gentilmente offerto da: ${senderLabel}`;
 
         const normalizedSenderJid = normalizeJid(context.senderJid);
-        const sendPromises = deliveryTargets.map((group) => {
-          const targetJid = group?.id || group?.jid;
-          if (!targetJid) {
-            return Promise.resolve();
-          }
+        const normalizedBotJid = normalizeJid(context.botJid || sock.user?.id);
 
-          const participants = Array.isArray(group?.participants)
+        const getGroupParticipantJids = async (group) => {
+          let participants = Array.isArray(group?.participants)
             ? group.participants.map((entry) => normalizeJid(entry?.id || entry)).filter(Boolean)
             : [];
 
-          const payload = { text: messageText + suffix };
-          if (participants.includes(normalizedSenderJid)) {
-            payload.mentions = [normalizedSenderJid];
+          if (!participants.length && typeof sock.groupMetadata === 'function') {
+            try {
+              const metadata = await sock.groupMetadata(normalizeJid(group?.id || group?.jid));
+              if (metadata?.participants) {
+                participants = metadata.participants.map((entry) => normalizeJid(entry?.id || entry)).filter(Boolean);
+              }
+            } catch (error) {
+              logger?.warn({ err: error, groupId: normalizeJid(group?.id || group?.jid) }, 'Impossibile recuperare i partecipanti del gruppo per il broadcast');
+            }
           }
+
+          return participants.filter((jid) => jid && jid !== normalizedBotJid);
+        };
+
+        const sendPromises = deliveryTargets.map(async (group) => {
+          const targetJid = normalizeJid(group?.id || group?.jid);
+          if (!targetJid) {
+            return { success: false, targetJid: null };
+          }
+
+          const participantJids = await getGroupParticipantJids(group);
+          const mentionLabels = participantJids.length ? await formatMentionList(participantJids, context) : [];
+          const mentionsText = mentionLabels.length ? `${mentionLabels.join(' ')}\n\n` : '';
+          const payload = {
+            text: `${messageText}\n\n${mentionsText}Broadcast gentilmente offerto da: ${senderLabel}`,
+            mentions: participantJids
+          };
 
           return sock
             .sendMessage(targetJid, payload)
-            .catch((error) => logger?.warn({ err: error, groupId: targetJid }, 'Errore durante il broadcast'));
+            .then(() => ({ success: true, targetJid, mentioned: participantJids.length }))
+            .catch((error) => {
+              logger?.warn({ err: error, groupId: targetJid }, 'Errore durante il broadcast');
+              return { success: false, targetJid };
+            });
         });
 
-        await Promise.all(sendPromises);
+        const sendResults = await Promise.all(sendPromises);
+        const successfulSends = sendResults.filter((result) => result?.success).length;
+
+        if (!successfulSends) {
+          return { text: 'Il broadcast non è stato inviato a nessun gruppo. Controlla i log del bot per i dettagli.' };
+        }
 
         return {
-          text: `Broadcast inviato in ${deliveryTargets.length} grupp${
-            deliveryTargets.length === 1 ? 'o' : 'i'
-          }.`,
-          mentions: [context.senderJid]
+          text: `Broadcast inviato in ${successfulSends} grupp${successfulSends === 1 ? 'o' : 'i'}.`,
+          mentions: successfulSends ? [context.senderJid] : []
         };
       }
     },
