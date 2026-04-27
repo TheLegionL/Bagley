@@ -3558,7 +3558,14 @@ const resolveSingleCommandTarget = (context) => {
         }
 
         if (action === 'add') {
-          const targets = resolveTargets(context);
+          let targets = resolveTargets(context);
+          if (!targets.length) {
+            const singleTarget = resolveSingleCommandTarget(context);
+            if (singleTarget?.jid) {
+              targets = [singleTarget.jid];
+            }
+          }
+
           if (!targets.length) {
             return wrap({ text: 'Specifica almeno un utente da aggiungere come moderatore.' });
           }
@@ -3605,6 +3612,13 @@ const resolveSingleCommandTarget = (context) => {
           const combinedTargets = new Set();
           targetsByIndex.forEach((jid) => combinedTargets.add(jid));
           resolveTargets(context).forEach((jid) => combinedTargets.add(jid));
+
+          if (!combinedTargets.size) {
+            const singleTarget = resolveSingleCommandTarget(context);
+            if (singleTarget?.jid) {
+              combinedTargets.add(singleTarget.jid);
+            }
+          }
 
           if (!combinedTargets.size) {
             return wrap({ text: 'Chi dovrei rimuovere? Usa indice o menzione per specificare il moderatore.' });
