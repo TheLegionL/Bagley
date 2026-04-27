@@ -87,6 +87,7 @@ const COMMAND_CATEGORY_LABELS = {
 
 const HELP_PERMISSION_BADGES = {
   [PermissionLevel.MEMBER]: '',
+  [PermissionLevel.MOD]: '',
   [PermissionLevel.ADMIN]: '',
   [PermissionLevel.WHITELIST]: '',
   [PermissionLevel.OWNER]: ''
@@ -1243,12 +1244,15 @@ function createCommandRegistry(dependencies) {
     return labels;
   };
 
-  const formatWhitelistEntries = async (entries, context) => {
+  const formatWhitelistEntries = async (entries, context, options = {}) => {
     if (!entries.length) {
-      return { text: 'La whitelist è vuota.', mentions: [] };
+      return {
+        text: options.emptyText || 'La whitelist è vuota.',
+        mentions: []
+      };
     }
 
-    const lines = ['Whitelist attuale:'];
+    const lines = [options.title || 'Whitelist attuale:'];
     const mentions = [];
 
     for (let index = 0; index < entries.length; index += 1) {
@@ -2332,7 +2336,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'del',
       usage: 'del (rispondendo al messaggio da cancellare)',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Cancella il messaggio citato tramite eliminazione da parte del bot.',
       handler: async (context) => {
         const wrap = (payload) => ({ ...payload, skipQuotedMedia: true });
@@ -2570,7 +2574,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'aumento',
       usage: 'aumento <utente|me> <importo>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Aumenta il saldo di un account BagleyBank.',
       handler: async (context) => {
         const bankUnavailable = ensureBankReady();
@@ -2759,7 +2763,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'tag',
       usage: 'tag [messaggio]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Tagga tutti i membri del gruppo con un messaggio personalizzato.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -2842,7 +2846,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'admintag',
       usage: 'admintag [messaggio]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Tagga solo gli amministratori (e il founder) del gruppo con un messaggio personalizzato.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -3088,7 +3092,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'radlink',
       usage: 'radlink',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Aggiorna l\'indice dei gruppi e restituisce un invito casuale.',
       handler: async () => {
         try {
@@ -3187,12 +3191,12 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'warn',
       usage: 'warn [@utente|jid] [motivo]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Assegna un warn a un membro; al terzo warn viene espulso.',
       handler: async (context) => {
         // Verifica esplicita del livello di permesso
-        if (context.permissionLevel < PermissionLevel.ADMIN) {
-          return { text: 'Non hai i permessi per usare questo comando. Solo admin e superiori possono assegnare warn.' };
+        if (context.permissionLevel < PermissionLevel.MOD) {
+          return { text: 'Non hai i permessi per usare questo comando. Solo moderatori, admin e superiori possono assegnare warn.' };
         }
 
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -3215,12 +3219,12 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'delwarn',
       usage: 'delwarn [@utente|jid]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Rimuove un singolo warn dall\'utente indicato.',
       handler: async (context) => {
         // Verifica esplicita del livello di permesso
-        if (context.permissionLevel < PermissionLevel.ADMIN) {
-          return { text: 'Non hai i permessi per usare questo comando. Solo admin e superiori possono rimuovere warn.' };
+        if (context.permissionLevel < PermissionLevel.MOD) {
+          return { text: 'Non hai i permessi per usare questo comando. Solo moderatori, admin e superiori possono rimuovere warn.' };
         }
 
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -3272,12 +3276,12 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'warnclear',
       usage: 'warnclear [@utente|jid]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Azzera tutti i warn di un utente.',
       handler: async (context) => {
         // Verifica esplicita del livello di permesso
-        if (context.permissionLevel < PermissionLevel.ADMIN) {
-          return { text: 'Non hai i permessi per usare questo comando. Solo admin e superiori possono azzerare i warn.' };
+        if (context.permissionLevel < PermissionLevel.MOD) {
+          return { text: 'Non hai i permessi per usare questo comando. Solo moderatori, admin e superiori possono azzerare i warn.' };
         }
 
         if (!context.remoteJid.endsWith('@g.us')) {
@@ -3318,7 +3322,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'mute',
       usage: 'mute [@utente|jid] [secondi]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Silenzia un utente cancellando i suoi messaggi (opzionale durata in secondi).',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -3386,7 +3390,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'unmute',
       usage: 'unmute [@utente|jid]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Rimuove un mute applicato in precedenza.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -3528,6 +3532,110 @@ const resolveSingleCommandTarget = (context) => {
       }
     },
     {
+      name: 'mod',
+      usage: 'mod [list|add|remove|clear] [target]',
+      minLevel: PermissionLevel.OWNER,
+      description: 'Gestione moderatori (solo owner può modificare).',
+      handler: async (context) => {
+        const wrap = (payload) => ({ ...payload, skipQuotedMedia: true });
+        const action = context.parsed.args.shift()?.toLowerCase();
+        if (!action || action === 'list') {
+          const entries = permissionService.getModeratorEntries();
+          const response = await formatWhitelistEntries(entries, context, {
+            emptyText: 'Nessun moderatore configurato al momento.',
+            title: 'Lista moderatori:'
+          });
+          return wrap(response);
+        }
+
+        if (context.permissionLevel < PermissionLevel.OWNER) {
+          return wrap({ text: 'Solo l\'owner può gestire i moderatori.' });
+        }
+
+        if (action === 'clear') {
+          await permissionService.clearModerators();
+          return wrap({ text: 'Tutti i moderatori sono stati rimossi. Owner only mode attivato.' });
+        }
+
+        if (action === 'add') {
+          const targets = resolveTargets(context);
+          if (!targets.length) {
+            return wrap({ text: 'Specifica almeno un utente da aggiungere come moderatore.' });
+          }
+
+          const added = [];
+          for (const target of targets) {
+            const entry = await permissionService.addModerator(target);
+            added.push(entry);
+          }
+
+          const lines = await Promise.all(
+            added.map(async (entry) => `- ${await buildMentionLabel(entry.jid, context)}`)
+          );
+          const mentions = added.map((entry) => entry.jid);
+          return wrap({
+            text: ['Moderatori aggiornati.', ...lines].join('\n'),
+            mentions
+          });
+        }
+
+        if (action === 'remove') {
+          const numericArgs = [];
+          const remainingArgs = [];
+
+          for (const arg of context.parsed.args) {
+            if (/^\d+$/.test(arg)) {
+              numericArgs.push(Number(arg));
+            } else {
+              remainingArgs.push(arg);
+            }
+          }
+
+          context.parsed.args = remainingArgs;
+
+          const targetsByIndex = [];
+          for (const indexValue of numericArgs) {
+            const index = indexValue - 1;
+            const entry = permissionService.getModeratorEntryByIndex(index);
+            if (entry) {
+              targetsByIndex.push(entry.jid);
+            }
+          }
+
+          const combinedTargets = new Set();
+          targetsByIndex.forEach((jid) => combinedTargets.add(jid));
+          resolveTargets(context).forEach((jid) => combinedTargets.add(jid));
+
+          if (!combinedTargets.size) {
+            return wrap({ text: 'Chi dovrei rimuovere? Usa indice o menzione per specificare il moderatore.' });
+          }
+
+          const removed = [];
+          for (const target of combinedTargets) {
+            const entry = await permissionService.removeModerator(target);
+            if (entry) {
+              removed.push(entry);
+            }
+          }
+
+          if (!removed.length) {
+            return wrap({ text: 'Nessuno dei target indicati era un moderatore valido.' });
+          }
+
+          const lines = await Promise.all(
+            removed.map(async (entry) => `- ${await buildMentionLabel(entry.jid, context)}`)
+          );
+          const mentions = removed.map((entry) => entry.jid);
+          return wrap({
+            text: ['Moderatori rimossi.', ...lines].join('\n'),
+            mentions
+          });
+        }
+
+        return wrap({ text: 'Azione non riconosciuta. Usa list, add, remove o clear.' });
+      }
+    },
+    {
       name: 'reload',
       usage: 'reload whitelist',
       minLevel: PermissionLevel.OWNER,
@@ -3542,7 +3650,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'promote',
       usage: 'promote [@utente|jid...]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Promuove utenti a admin del gruppo.',
       handler: async (context) =>
         participantsUpdateCommand(context, {
@@ -3556,7 +3664,7 @@ const resolveSingleCommandTarget = (context) => {
     {
       name: 'demote',
       usage: 'demote [@utente|jid...]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Rimuove i privilegi admin dagli utenti indicati.',
       handler: async (context) =>
         participantsUpdateCommand(context, {
@@ -4216,7 +4324,7 @@ ${item.url}`);
     {
       name: 'shut',
       usage: 'shut',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Chiude temporaneamente la chat ai soli admin.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4239,7 +4347,7 @@ ${item.url}`);
     {
       name: 'open',
       usage: 'open',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Riapre la chat a tutti i partecipanti.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4262,7 +4370,7 @@ ${item.url}`);
     {
       name: 'req',
       usage: 'req [secondi]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Accetta le richieste d\'ingresso aprendo temporaneamente il gruppo a tutti.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4311,7 +4419,7 @@ ${item.url}`);
     {
       name: 'endvc',
       usage: 'endvc',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Termina la voice chat in corso nel gruppo.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4351,7 +4459,7 @@ ${item.url}`);
     {
       name: 'antilink',
       usage: 'antilink <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Blocca i link nel gruppo e warn automatico per chi li invia.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4384,7 +4492,7 @@ ${item.url}`);
     {
       name: 'antibot',
       usage: 'antibot <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Blocca messaggi che iniziano con un punto per ridurre i rischi di bot esterni.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4417,7 +4525,7 @@ ${item.url}`);
     {
       name: 'antispam',
       usage: 'antispam <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Attiva il filtro antispam che chiude la chat e warn gli spammer.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4452,7 +4560,7 @@ ${item.url}`);
     {
       name: 'antinuke',
       usage: 'antinuke <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Protegge il gruppo da comandi distruttivi come steal/abuse.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4485,7 +4593,7 @@ ${item.url}`);
     {
       name: 'antighost',
       usage: 'antighost <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Recupera i messaggi eliminati e li reinvia nel gruppo.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4514,7 +4622,7 @@ ${item.url}`);
     {
       name: 'greet',
       usage: 'greet <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Gestisce i messaggi di benvenuto e addio automatici.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -4545,7 +4653,7 @@ ${item.url}`);
     {
       name: 'panel',
       usage: 'panel',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Mostra lo stato dei sistemi amministrabili (antilink, antibot, antispam, antinuke, AI, shh).',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -5172,7 +5280,7 @@ ${item.url}`);
     {
       name: 'bagley',
       usage: 'bagley <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Attiva o disattiva tutte le funzioni di Bagley nel gruppo corrente.',
       handler: async (context) => {
         const wrap = (payload) => ({ ...payload, skipQuotedMedia: true });
@@ -5206,7 +5314,7 @@ ${item.url}`);
     {
       name: 'games',
       usage: 'games <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Attiva o disattiva i minigiochi nel gruppo corrente.',
       handler: async (context) => {
         const wrap = (payload) => ({ ...payload, skipQuotedMedia: true });
@@ -5240,7 +5348,7 @@ ${item.url}`);
     {
       name: 'ai',
       usage: 'ai <on|off|status>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Abilita o disabilita le risposte AI nel gruppo corrente.',
       handler: async (context) => {
         if (!context.remoteJid?.endsWith('@g.us')) {
@@ -5281,7 +5389,7 @@ ${item.url}`);
     {
       name: 'shh',
       usage: 'shh <on|off>',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Silenza o riattiva i broadcast di Bagley in questo gruppo.',
       handler: async (context) => handleSilenceToggle(context, 'shh')
     },
@@ -5896,7 +6004,7 @@ ${item.url}`);
     {
       name: 'rivela',
       usage: 'rivela (rispondendo a foto/video view-once)',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Rende permanente una foto o video a visualizzazione singola citato.',
       handler: async (context) => {
         const wrap = (payload) => ({ ...payload, skipQuotedMedia: true });
@@ -6351,7 +6459,7 @@ ${item.url}`);
     {
       name: 'radar',
       usage: 'radar [@utente|jid]',
-      minLevel: PermissionLevel.ADMIN,
+      minLevel: PermissionLevel.MOD,
       description: 'Analizza un utente e segnala possibili attività da bot.',
       handler: async (context) => {
         if (!radarService) {

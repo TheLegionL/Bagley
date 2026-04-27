@@ -1,12 +1,3 @@
-/**
- * AI Plugin Universale - Servizio di Intelligenza Artificiale
- *
- * Plugin completo per l'integrazione di funzionalita AI basate su OpenAI
- * in chatbot WhatsApp e altre piattaforme.
- *
- * @version 1.0.0
- */
-
 const OpenAI = require('openai');
 const { toFile } = require('openai/uploads');
 

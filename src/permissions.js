@@ -1,15 +1,17 @@
 const { jidNormalizedUser } = require('@whiskeysockets/baileys');
-const { loadOwnerJid, loadWhitelist, saveWhitelist } = require('./config');
+const { loadOwnerJid, loadWhitelist, saveWhitelist, loadModerators } = require('./config');
 
 const PermissionLevel = Object.freeze({
   MEMBER: 0,
-  ADMIN: 1,
-  WHITELIST: 2,
-  OWNER: 3
+  MOD: 1,
+  ADMIN: 2,
+  WHITELIST: 3,
+  OWNER: 4
 });
 
 const PermissionLabels = {
   [PermissionLevel.MEMBER]: 'Membro',
+  [PermissionLevel.MOD]: 'Moderatore',
   [PermissionLevel.ADMIN]: 'Admin',
   [PermissionLevel.WHITELIST]: 'Whitelist',
   [PermissionLevel.OWNER]: 'Owner'
@@ -114,7 +116,7 @@ function toWhitelistEntry(rawEntry) {
 }
 
 class PermissionService {
-  constructor(ownerJids, whitelistEntries) {
+  constructor(ownerJids, whitelistEntries, moderatorEntries) {
     const jidList = Array.isArray(ownerJids) ? ownerJids : [ownerJids];
     this.ownerJids = new Set(jidList.map((jid) => normalizeJid(jid)).filter(Boolean));
     this.whitelist = new Map();
@@ -122,6 +124,13 @@ class PermissionService {
       const normalized = toWhitelistEntry(entry);
       if (normalized) {
         this.whitelist.set(normalized.jid, normalized);
+      }
+    });
+    this.moderators = new Set();
+    (moderatorEntries || []).forEach((entry) => {
+      const normalized = toWhitelistEntry(entry);
+      if (normalized) {
+        this.moderators.add(normalized.jid);
       }
     });
   }
@@ -154,6 +163,18 @@ class PermissionService {
     return entries[index];
   }
 
+  getModeratorEntries() {
+    return Array.from(this.moderators).map((jid) => ({ jid }));
+  }
+
+  getModeratorEntryByIndex(index) {
+    const entries = this.getModeratorEntries();
+    if (index < 0 || index >= entries.length) {
+      return null;
+    }
+    return entries[index];
+  }
+
   async reloadWhitelist() {
     const whitelistEntries = await loadWhitelist();
     this.whitelist.clear();
@@ -164,6 +185,60 @@ class PermissionService {
       }
     });
     return this.getWhitelistEntries();
+  }
+
+  async reloadModerators() {
+    const moderatorEntries = await loadModerators();
+    this.moderators.clear();
+    (moderatorEntries || []).forEach((entry) => {
+      const normalized = toWhitelistEntry(entry);
+      if (normalized) {
+        this.moderators.add(normalized.jid);
+      }
+    });
+    return this.getModeratorEntries();
+  }
+
+  async addModerator(jid, name) {
+    const normalizedJid = normalizeJid(jid);
+    if (!normalizedJid) {
+      throw new Error('JID non valido per il moderatore.');
+    }
+
+    this.moderators.add(normalizedJid);
+    await saveModerators(this.getModeratorEntries());
+    return { jid: normalizedJid, name: typeof name === 'string' ? name.trim() : undefined };
+  }
+
+  async removeModerator(jid) {
+    const normalizedJid = normalizeJid(jid);
+    if (!normalizedJid) {
+      throw new Error('JID non valido per il moderatore.');
+    }
+
+    if (!this.moderators.has(normalizedJid)) {
+      return null;
+    }
+
+    this.moderators.delete(normalizedJid);
+    await saveModerators(this.getModeratorEntries());
+    return { jid: normalizedJid };
+  }
+
+  async removeModeratorByIndex(index) {
+    const entry = this.getModeratorEntryByIndex(index);
+    if (!entry) {
+      return null;
+    }
+
+    this.moderators.delete(entry.jid);
+    await saveModerators(this.getModeratorEntries());
+    return entry;
+  }
+
+  async clearModerators() {
+    this.moderators.clear();
+    await saveModerators([]);
   }
 
   async addToWhitelist(jid, name) {
@@ -244,6 +319,10 @@ class PermissionService {
     return this.whitelist.has(normalizeJid(jid));
   }
 
+  isModerator(jid) {
+    return this.moderators.has(normalizeJid(jid));
+  }
+
   getPermissionLevel(jid, groupMetadata) {
     const normalized = normalizeJid(jid);
     if (!normalized) {
@@ -265,6 +344,10 @@ class PermissionService {
       }
     }
 
+    if (this.isModerator(normalized)) {
+      return PermissionLevel.MOD;
+    }
+
     return PermissionLevel.MEMBER;
   }
 }
@@ -272,7 +355,8 @@ class PermissionService {
 async function createPermissionService() {
   const ownerJid = loadOwnerJid();
   const whitelistEntries = await loadWhitelist();
-  return new PermissionService(ownerJid, whitelistEntries);
+  const moderatorEntries = await loadModerators();
+  return new PermissionService(ownerJid, whitelistEntries, moderatorEntries);
 }
 
 module.exports = {

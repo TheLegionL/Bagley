@@ -7,6 +7,8 @@ const OWNER_EXAMPLE_FILE = path.join(CONFIG_DIR, 'owner.example.json');
 const OPENAI_FILE = path.join(CONFIG_DIR, 'openai.json');
 const OPENAI_EXAMPLE_FILE = path.join(CONFIG_DIR, 'openai.example.json');
 const WHITELIST_FILE = path.join(CONFIG_DIR, 'whitelist.json');
+const MODERATOR_FILE = path.join(CONFIG_DIR, 'moderators.json');
+const MODERATOR_EXAMPLE_FILE = path.join(CONFIG_DIR, 'moderators.example.json');
 
 function assertExampleExists(examplePath) {
   if (fs.existsSync(examplePath)) {
@@ -76,6 +78,14 @@ async function ensureWhitelistFile() {
   await fs.outputJson(WHITELIST_FILE, [], { spaces: 2 });
 }
 
+async function ensureModeratorsFile() {
+  if (fs.existsSync(MODERATOR_FILE)) {
+    return;
+  }
+
+  await fs.outputJson(MODERATOR_FILE, [], { spaces: 2 });
+}
+
 async function loadWhitelist() {
   await ensureWhitelistFile();
 
@@ -122,13 +132,62 @@ async function saveWhitelist(entries) {
   await fs.outputJson(WHITELIST_FILE, normalized, { spaces: 2 });
 }
 
+async function loadModerators() {
+  await ensureModeratorsFile();
+
+  const data = await fs.readJson(MODERATOR_FILE);
+  if (Array.isArray(data)) {
+    return data
+      .map((entry) => {
+        if (typeof entry === 'string') {
+          const jid = entry.trim();
+          return jid ? { jid } : null;
+        }
+
+        if (entry && typeof entry === 'object') {
+          const jid = typeof entry.jid === 'string' ? entry.jid.trim() : '';
+          const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+          return jid ? { jid, name: name || undefined } : null;
+        }
+
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+async function saveModerators(entries) {
+  const normalized = (entries || [])
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return null;
+      }
+
+      const jid = typeof entry.jid === 'string' ? entry.jid.trim() : '';
+      if (!jid) {
+        return null;
+      }
+
+      const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+      return name ? { jid, name } : { jid };
+    })
+    .filter(Boolean);
+
+  await fs.outputJson(MODERATOR_FILE, normalized, { spaces: 2 });
+}
+
 module.exports = {
   CONFIG_DIR,
   OWNER_FILE,
   OPENAI_FILE,
   WHITELIST_FILE,
+  MODERATOR_FILE,
   loadOwnerJid,
   loadOpenAIKey,
   loadWhitelist,
-  saveWhitelist
+  saveWhitelist,
+  loadModerators,
+  saveModerators
 };
