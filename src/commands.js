@@ -3554,7 +3554,7 @@ const resolveSingleCommandTarget = (context) => {
 
         if (action === 'clear') {
           await permissionService.clearModerators();
-          return wrap({ text: 'Tutti i moderatori sono stati rimossi. Owner only mode attivato.' });
+          return wrap({ text: 'Tutti i moderatori sono stati rimossi. Non meritate un cazzo.' });
         }
 
         if (action === 'add') {
@@ -3565,6 +3565,7 @@ const resolveSingleCommandTarget = (context) => {
               targets = [singleTarget.jid];
             }
           }
+          return wrap({ text: 'Moderatore aggiunto, augri boss!'})
 
           if (!targets.length) {
             return wrap({ text: 'Specifica almeno un utente da aggiungere come moderatore.' });
@@ -3576,12 +3577,9 @@ const resolveSingleCommandTarget = (context) => {
             added.push(entry);
           }
 
-          const lines = await Promise.all(
-            added.map(async (entry) => `- ${await buildMentionLabel(entry.jid, context)}`)
-          );
           const mentions = added.map((entry) => entry.jid);
           return wrap({
-            text: ['Moderatori aggiornati.', ...lines].join('\n'),
+            text: 'Sei un moderatore adesso. Non sarà molto, ma è un inizio.',
             mentions
           });
         }
@@ -3597,6 +3595,7 @@ const resolveSingleCommandTarget = (context) => {
               remainingArgs.push(arg);
             }
           }
+          return wrap ({ text: 'Moderatore rimosso, è finito il tempo delle mele.'})
 
           context.parsed.args = remainingArgs;
 
