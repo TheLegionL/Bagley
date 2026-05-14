@@ -2983,7 +2983,19 @@ const resolveSingleCommandTarget = (context) => {
       minLevel: PermissionLevel.WHITELIST,
       description: 'Invia un messaggio in tutti i gruppi dove è presente Bagley.',
       handler: async (context) => {
-        let groups = await broadcastGroups();
+        const normalizeGroupId = (group) => normalizeJid(group?.id || group?.jid || group?.key?.remoteJid);
+        const uniqueGroups = (groupsArray) => {
+          const seen = new Map();
+          for (const group of groupsArray || []) {
+            const groupId = normalizeGroupId(group);
+            if (groupId && !seen.has(groupId)) {
+              seen.set(groupId, group);
+            }
+          }
+          return Array.from(seen.values());
+        };
+
+        let groups = uniqueGroups(await broadcastGroups());
         if (!groups.length) {
           return { text: 'Non ho trovato gruppi attivi dove inviare il broadcast.' };
         }
@@ -2991,7 +3003,7 @@ const resolveSingleCommandTarget = (context) => {
         try {
           const refreshedGroups = await sock.groupFetchAllParticipating?.();
           if (refreshedGroups) {
-            groups = Object.values(refreshedGroups || {});
+            groups = uniqueGroups(Object.values(refreshedGroups || {}));
           }
         } catch (error) {
           logger?.warn({ err: error }, 'Impossibile aggiornare l\'elenco dei gruppi prima del broadcast');
@@ -3034,23 +3046,30 @@ const resolveSingleCommandTarget = (context) => {
         const normalizedSenderJid = normalizeJid(context.senderJid);
         const normalizedBotJid = normalizeJid(context.botJid || sock.user?.id);
 
-        const getGroupParticipantJids = async (group) => {
+        const getGroupParticipantData = async (group) => {
           let participants = Array.isArray(group?.participants)
             ? group.participants.map((entry) => normalizeJid(entry?.id || entry)).filter(Boolean)
             : [];
 
-          if (!participants.length && typeof sock.groupMetadata === 'function') {
+          let metadata = Array.isArray(group?.participants) ? group : null;
+          const targetJid = normalizeJid(group?.id || group?.jid);
+
+          if ((!participants.length || !metadata) && typeof sock.groupMetadata === 'function' && targetJid) {
             try {
-              const metadata = await sock.groupMetadata(normalizeJid(group?.id || group?.jid));
-              if (metadata?.participants) {
-                participants = metadata.participants.map((entry) => normalizeJid(entry?.id || entry)).filter(Boolean);
+              const fetchedMetadata = await sock.groupMetadata(targetJid);
+              if (fetchedMetadata?.participants) {
+                participants = fetchedMetadata.participants.map((entry) => normalizeJid(entry?.id || entry)).filter(Boolean);
+                metadata = fetchedMetadata;
               }
             } catch (error) {
-              logger?.warn({ err: error, groupId: normalizeJid(group?.id || group?.jid) }, 'Impossibile recuperare i partecipanti del gruppo per il broadcast');
+              logger?.warn({ err: error, groupId: targetJid }, 'Impossibile recuperare i partecipanti del gruppo per il broadcast');
             }
           }
 
-          return participants.filter((jid) => jid && jid !== normalizedBotJid);
+          return {
+            participantJids: participants.filter((jid) => jid && jid !== normalizedBotJid),
+            metadata
+          };
         };
 
         const sendPromises = deliveryTargets.map(async (group) => {
@@ -3059,8 +3078,9 @@ const resolveSingleCommandTarget = (context) => {
             return { success: false, targetJid: null };
           }
 
-          const participantJids = await getGroupParticipantJids(group);
-          const mentionLabels = participantJids.length ? await formatMentionList(participantJids, context) : [];
+          const { participantJids, metadata } = await getGroupParticipantData(group);
+          const targetContext = { ...context, remoteJid: targetJid, groupMetadata: metadata || context.groupMetadata };
+          const mentionLabels = participantJids.length ? await formatMentionList(participantJids, targetContext) : [];
           const mentionsText = mentionLabels.length ? `${mentionLabels.join(' ')}\n\n` : '';
           const payload = {
             text: `${messageText}\n\n${mentionsText}Broadcast gentilmente offerto da: ${senderLabel}`,
