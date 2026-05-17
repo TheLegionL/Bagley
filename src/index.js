@@ -5,6 +5,7 @@ const {
   makeCacheableSignalKeyStore,
   useMultiFileAuthState,
   downloadMediaMessage,
+  generateWAMessageFromContent,
   proto
 } = require('@whiskeysockets/baileys');
 const Boom = require('@hapi/boom');
@@ -267,6 +268,15 @@ async function startBot(services) {
 
   const contactCache = createContactCache({ sock, logger });
   const callTracker = createCallTracker();
+
+  const sendBotPayload = async (remoteJid, payload, options) => {
+    if (payload?.buttonsMessage) {
+      const fullMessage = await generateWAMessageFromContent(remoteJid, { buttonsMessage: payload.buttonsMessage }, options || {});
+      await sock.relayMessage(remoteJid, fullMessage.message, { messageId: fullMessage.key.id });
+      return fullMessage;
+    }
+    return sock.sendMessage(remoteJid, payload, options);
+  };
 
   const blacklistEnforcer = {
     async removeFromGroup(groupJid, targets) {
@@ -1009,7 +1019,7 @@ async function startBot(services) {
               const shouldQuoteOriginal = Boolean(commandResponse.replyToMessage);
               for (const payload of payloads) {
                 const options = shouldQuoteOriginal ? { quoted: msg } : undefined;
-                const sentMessage = await sock.sendMessage(remoteJid, payload, options);
+                const sentMessage = await sendBotPayload(remoteJid, payload, options);
                 trackBotMessage(sentMessage);
               }
             }
@@ -1034,7 +1044,7 @@ async function startBot(services) {
             const shouldQuoteOriginal = Boolean(commandResponse.replyToMessage);
             for (const payload of payloads) {
               const options = shouldQuoteOriginal ? { quoted: msg } : undefined;
-              const sentMessage = await sock.sendMessage(remoteJid, payload, options);
+              const sentMessage = await sendBotPayload(remoteJid, payload, options);
               trackBotMessage(sentMessage);
             }
             continue;
