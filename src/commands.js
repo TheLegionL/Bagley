@@ -239,7 +239,7 @@ const HELP_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━�
 const buildHelpCard = ({
   title = '📖 Bagley Help',
   sections = [],
-  footer = '🤖 Powered By Bagley'
+  footer = '> 🤖 Powered By Bagley'
 } = {}) => {
   const payload = [title, HELP_CARD_DIVIDER];
   sections.forEach((section, index) => {
