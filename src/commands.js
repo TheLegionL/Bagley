@@ -2947,32 +2947,19 @@ const resolveSingleCommandTarget = (context) => {
         const lines = ['🏓 Pong!', `- Latenza stimata: ${latency}ms`, `- Stato socket: ${status}`];
         return {
           text: buildPingCard({ lines }),
-          interactiveMessage: {
-            header: {
-              title: '🏓 Ping',
-              subtitle: `${latency}ms`,
-              hasMediaAttachment: false
-            },
-            body: { text: buildPingCard({ lines }) },
-            footer: { text: 'ℹ️ Usa .ping per un check rapido' },
-            nativeFlowMessage: {
-              buttons: [
-                {
-                  name: 'quick_reply',
-                  buttonParamsJson: JSON.stringify({
-                    display_text: 'Aggiorna',
-                    id: '.ping'
-                  })
-                },
-                {
-                  name: 'quick_reply',
-                  buttonParamsJson: JSON.stringify({
-                    display_text: 'Dettagli',
-                    id: '.ping details'
-                  })
-                }
-              ]
-            }
+          buttonsMessage: {
+            contentText: buildPingCard({ lines }),
+            footerText: 'ℹ️ Usa .ping per un check rapido',
+            buttons: [
+              {
+                buttonId: '.ping',
+                buttonText: { displayText: 'Aggiorna' }
+              },
+              {
+                buttonId: '.ping details',
+                buttonText: { displayText: 'Dettagli' }
+              }
+            ]
           }
         };
       }
