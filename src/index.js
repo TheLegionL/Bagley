@@ -844,8 +844,12 @@ async function startBot(services) {
 
         let text = extractMessageText(msg);
         const buttonResponse = msg.message?.buttonsResponseMessage;
-        if (!text && buttonResponse?.selectedButtonId) {
-          text = buttonResponse.selectedButtonId;
+        const templateResponse = msg.message?.templateButtonReplyMessage;
+        if (!text) {
+          text = buttonResponse?.selectedButtonId || templateResponse?.selectedId || buttonResponse?.selectedDisplayText || templateResponse?.selectedDisplayText;
+          if (typeof text === 'string') {
+            text = text.trim();
+          }
         }
         const senderJid = msg.key?.participant || msg.participant || remoteJid;
         const normalizedSender = normalizeJid(senderJid);
