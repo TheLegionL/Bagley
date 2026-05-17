@@ -301,7 +301,23 @@ async function startBot(services) {
   const sendBotPayload = async (remoteJid, payload, options) => {
     const buttonsMessage = payload?.buttonsMessage || payload?.message?.buttonsMessage;
     if (buttonsMessage) {
-      return sock.sendMessage(remoteJid, { buttonsMessage }, options || {});
+      const content = payload?.buttonsMessage ? payload : { buttonsMessage };
+      try {
+        return await sock.sendMessage(remoteJid, content, options || {});
+      } catch (error) {
+        logger?.warn({ err: error, remoteJid, content }, 'Impossibile inviare buttonsMessage con sendMessage, provo il fallback');
+        if (typeof generateWAMessageFromContent === 'function') {
+          try {
+            const fullMessage = await generateWAMessageFromContent(remoteJid, { buttonsMessage }, options || {});
+            await sock.relayMessage(remoteJid, fullMessage.message, { messageId: fullMessage.key.id });
+            return fullMessage;
+          } catch (fallbackError) {
+            logger?.error({ err: fallbackError, remoteJid }, 'Fallback buttonsMessage fallito');
+            throw fallbackError;
+          }
+        }
+        throw error;
+      }
     }
     return sock.sendMessage(remoteJid, payload, options);
   };
