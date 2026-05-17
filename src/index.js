@@ -301,9 +301,7 @@ async function startBot(services) {
   const sendBotPayload = async (remoteJid, payload, options) => {
     const buttonsMessage = payload?.buttonsMessage || payload?.message?.buttonsMessage;
     if (buttonsMessage) {
-      const fullMessage = await generateWAMessageFromContent(remoteJid, { buttonsMessage }, options || {});
-      await sock.relayMessage(remoteJid, fullMessage.message, { messageId: fullMessage.key.id });
-      return fullMessage;
+      return sock.sendMessage(remoteJid, { buttonsMessage }, options || {});
     }
     return sock.sendMessage(remoteJid, payload, options);
   };
