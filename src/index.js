@@ -10,7 +10,12 @@ const {
 } = require('@whiskeysockets/baileys');
 const Boom = require('@hapi/boom');
 const pino = require('pino');
-const qrcode = require('qrcode-terminal');
+let qrcode;
+try {
+  qrcode = require('qrcode-terminal');
+} catch (error) {
+  qrcode = null;
+}
 
 const { createAIService } = require('./ai');
 const { createAntilinkService } = require('./antilink-service');
@@ -638,7 +643,11 @@ async function startBot(services) {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      qrcode.generate(qr, { small: true });
+      if (qrcode) {
+        qrcode.generate(qr, { small: true });
+      } else {
+        logger.warn('qrcode-terminal non installato: impossibile mostrare il QR in console');
+      }
       if (pairingCodePhone && !pairingCodeShown && typeof sock.requestPairingCode === 'function') {
         try {
           const code = await sock.requestPairingCode(pairingCodePhone);
