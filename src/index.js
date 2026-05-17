@@ -299,8 +299,9 @@ async function startBot(services) {
   const callTracker = createCallTracker();
 
   const sendBotPayload = async (remoteJid, payload, options) => {
-    if (payload?.buttonsMessage) {
-      const fullMessage = await generateWAMessageFromContent(remoteJid, { buttonsMessage: payload.buttonsMessage }, options || {});
+    const buttonsMessage = payload?.buttonsMessage || payload?.message?.buttonsMessage;
+    if (buttonsMessage) {
+      const fullMessage = await generateWAMessageFromContent(remoteJid, { buttonsMessage }, options || {});
       await sock.relayMessage(remoteJid, fullMessage.message, { messageId: fullMessage.key.id });
       return fullMessage;
     }
