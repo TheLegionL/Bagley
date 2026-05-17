@@ -23,14 +23,14 @@ function assertExampleExists(examplePath) {
 function loadOwnerJid() {
   const envOwner = process.env.OWNER_JID && process.env.OWNER_JID.trim();
   if (envOwner) {
-    return envOwner;
+    return [envOwner];
   }
 
   if (!fs.existsSync(OWNER_FILE)) {
-    assertExampleExists(OWNER_EXAMPLE_FILE);
-    throw new Error(
-      'Owner configuration missing. Create config/owner.json based on config/owner.example.json and set the "ownerJid" value.'
-    );
+    if (fs.existsSync(OWNER_EXAMPLE_FILE)) {
+      return [];
+    }
+    return [];
   }
 
   const data = fs.readJsonSync(OWNER_FILE);
@@ -45,7 +45,7 @@ function loadOwnerJid() {
   const normalized = typeof ownerJid === 'string' ? ownerJid.trim() : '';
 
   if (!normalized) {
-    throw new Error('The ownerJid field inside config/owner.json is empty. Set it to the WhatsApp JID of the bot owner.');
+    return [];
   }
 
   return [normalized];
