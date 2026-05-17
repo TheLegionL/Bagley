@@ -1,15 +1,39 @@
-const {
-  default: makeWASocket,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore,
-  useMultiFileAuthState,
-  downloadMediaMessage,
-  generateWAMessageFromContent,
-  proto
-} = require('@whiskeysockets/baileys');
-const Boom = require('@hapi/boom');
-const pino = require('pino');
+let makeWASocket, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, useMultiFileAuthState, downloadMediaMessage, generateWAMessageFromContent, proto;
+
+try {
+  const baileys = require('@whiskeysockets/baileys');
+  makeWASocket = baileys.default;
+  DisconnectReason = baileys.DisconnectReason;
+  fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion;
+  makeCacheableSignalKeyStore = baileys.makeCacheableSignalKeyStore;
+  useMultiFileAuthState = baileys.useMultiFileAuthState;
+  downloadMediaMessage = baileys.downloadMediaMessage;
+  generateWAMessageFromContent = baileys.generateWAMessageFromContent;
+  proto = baileys.proto;
+} catch (error) {
+  console.error('ERRORE CRITICO: @whiskeysockets/baileys non trovato!');
+  console.error('Esegui: cd ' + __dirname + '/.. && npm install');
+  console.error('Errore:', error.message);
+  process.exit(1);
+}
+
+let Boom;
+try {
+  Boom = require('@hapi/boom');
+} catch (error) {
+  console.error('ERRORE CRITICO: @hapi/boom non trovato!');
+  console.error('Esegui: cd ' + __dirname + '/.. && npm install');
+  process.exit(1);
+}
+
+let pino;
+try {
+  pino = require('pino');
+} catch (error) {
+  console.error('ERRORE CRITICO: pino non trovato!');
+  console.error('Esegui: cd ' + __dirname + '/.. && npm install');
+  process.exit(1);
+}
 let qrcode;
 try {
   qrcode = require('qrcode-terminal');
