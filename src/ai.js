@@ -1,5 +1,11 @@
-const OpenAI = require('openai');
-const { toFile } = require('openai/uploads');
+let OpenAI = null;
+let toFile = null;
+try {
+  OpenAI = require('openai');
+  ({ toFile } = require('openai/uploads'));
+} catch (error) {
+  // OpenAI is optional. If it isn't installed, the bot can still run without AI.
+}
 
 const MAX_HISTORY_LENGTH = 12;
 
@@ -29,7 +35,10 @@ function formatUserContent({ chatName, authorName, messageText }) {
 }
 
 function createAIService(apiKey, logger) {
-  if (!apiKey) {
+  if (!apiKey || !OpenAI || !toFile) {
+    if (apiKey && (!OpenAI || !toFile)) {
+      logger?.warn('OpenAI module unavailable; AI features disabled');
+    }
     return {
       enabled: false,
       async generateReply() {

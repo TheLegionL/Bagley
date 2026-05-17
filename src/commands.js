@@ -271,7 +271,7 @@ function buildHelpMessage(level, commandList) {
   const renderLine = (cmd) => {
     const badge = HELP_PERMISSION_BADGES[cmd.minLevel] || '';
     const badgeText = badge ? `${badge} ` : '';
-    return `- ${badgeText}!${cmd.usage} → ${cmd.description}`;
+    return `- ${badgeText}.${cmd.usage} → ${cmd.description}`;
   };
 
   const emitCategory = (key) => {
@@ -5876,7 +5876,7 @@ ${item.url}`);
 
         if (!StickerLib || !StickerTypesLib) {
           return wrap({
-            text: 'Modulo sticker non installato. Esegui `npm install wa-sticker-formatter` per abilitare !s.'
+            text: 'Modulo sticker non installato. Esegui `npm install wa-sticker-formatter` per abilitare .s.'
           });
         }
 
@@ -5886,7 +5886,7 @@ ${item.url}`);
 
         const { contextInfo, quoted } = extractQuotedMessageInfo(context);
         if (!quoted || !contextInfo?.stanzaId) {
-          return wrap({ text: 'Rispondi a una foto o video con !s per trasformarlo in sticker.' });
+          return wrap({ text: 'Rispondi a una foto o video con .s per trasformarlo in sticker.' });
         }
 
         const resolved = resolveQuotedMedia(quoted);
@@ -6678,7 +6678,10 @@ ${item.url}`);
 
     context.parsed = parsed;
     const response = await command.handler(context);
-    return maybeAttachQuotedMedia(context, response);
+    if (command.attachQuotedMedia) {
+      return maybeAttachQuotedMedia(context, response);
+    }
+    return response;
   }
 
   return {
