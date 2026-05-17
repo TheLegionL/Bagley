@@ -180,6 +180,15 @@ const COMMAND_CATEGORY_MAP = {
   abuse: 'takeover'
 };
 
+const PING_QUICK_REPLY_BUTTONS = [
+  { title: 'Aggiorna', command: '.ping' },
+  { title: 'Dettagli', command: '.ping details' }
+].map(({ title, command }) => ({
+  buttonId: command,
+  buttonText: { displayText: title },
+  type: 1
+}));
+
 function parseCommand(text) {
   if (!text) {
     return null;
@@ -2946,22 +2955,10 @@ const resolveSingleCommandTarget = (context) => {
 
         const lines = ['🏓 Pong!', `- Latenza stimata: ${latency}ms`, `- Stato socket: ${status}`];
         return {
-          message: {
-            buttonsMessage: {
-              contentText: buildPingCard({ lines }),
-              footerText: 'ℹ️ Usa .ping per un check rapido',
-              buttons: [
-                {
-                  buttonId: '.ping',
-                  buttonText: { displayText: 'Aggiorna' }
-                },
-                {
-                  buttonId: '.ping details',
-                  buttonText: { displayText: 'Dettagli' }
-                }
-              ]
-            }
-          }
+          text: buildPingCard({ lines }),
+          footer: 'ℹ️ Usa .ping per un check rapido',
+          buttons: PING_QUICK_REPLY_BUTTONS,
+          headerType: 1
         };
       }
     },
