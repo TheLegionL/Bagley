@@ -2949,7 +2949,10 @@ const resolveSingleCommandTarget = (context) => {
               title: '💻 System Stats',
               lines: detailLines,
               footer: 'ℹ️ Usa .ping per un check rapido'
-            })
+            }),
+            footer: 'ℹ️ Usa .ping per un check rapido',
+            buttons: PING_QUICK_REPLY_BUTTONS,
+            headerType: 1
           };
         }
 
