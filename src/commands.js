@@ -2945,23 +2945,31 @@ const resolveSingleCommandTarget = (context) => {
           ];
 
           return {
-            text: buildPingCard({
-              title: '💻 System Stats',
-              lines: detailLines,
-              footer: 'ℹ️ Usa .ping per un check rapido'
-            }),
-            footer: 'ℹ️ Usa .ping per un check rapido',
-            buttons: PING_QUICK_REPLY_BUTTONS,
-            headerType: 1
+            message: {
+              buttonsMessage: {
+                contentText: buildPingCard({
+                  title: '💻 System Stats',
+                  lines: detailLines,
+                  footer: 'ℹ️ Usa .ping per un check rapido'
+                }),
+                footerText: 'ℹ️ Usa .ping per un check rapido',
+                buttons: PING_QUICK_REPLY_BUTTONS,
+                headerType: 1
+              }
+            }
           };
         }
 
         const lines = ['🏓 Pong!', `- Latenza stimata: ${latency}ms`, `- Stato socket: ${status}`];
         return {
-          text: buildPingCard({ lines }),
-          footer: 'ℹ️ Usa .ping per un check rapido',
-          buttons: PING_QUICK_REPLY_BUTTONS,
-          headerType: 1
+          message: {
+            buttonsMessage: {
+              contentText: buildPingCard({ lines }),
+              footerText: 'ℹ️ Usa .ping per un check rapido',
+              buttons: PING_QUICK_REPLY_BUTTONS,
+              headerType: 1
+            }
+          }
         };
       }
     },
