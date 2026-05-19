@@ -3898,7 +3898,7 @@ const resolveSingleCommandTarget = (context) => {
 
         if (!username) {
           if (targetJid === normalizeJid(context.senderJid)) {
-            return musicResponse('Non hai collegato un account. Usa prima !setusr <nickname>.');
+            return musicResponse('Non hai collegato un account. Per usare i comandi di LastFM, devi prima creare un account nel sito ufficiale LastFM.com, collega il tuo provider di musica dal profilo e poi torna qui e usa > !setusr <nickname>.');
           }
           const label = await buildMentionLabel(targetJid, context);
           return musicResponse(`${label} non ha collegato un account Last.fm.`, { mentions: [targetJid] });
@@ -3990,7 +3990,7 @@ const resolveSingleCommandTarget = (context) => {
 
         if (!username) {
           if (targetJid === normalizeJid(context.senderJid)) {
-            return musicResponse('Non hai collegato un account. Usa prima !setusr <nickname>.');
+            return musicResponse('Non hai collegato un account. Per usare i comandi di LastFM, devi prima creare un account nel sito ufficiale LastFM.com, collega il tuo provider di musica dal profilo e poi torna qui e usa > !setusr <nickname>.');
           }
           const label = await buildMentionLabel(targetJid, context);
           return musicResponse(`${label} non ha collegato un account Last.fm.`, { mentions: [targetJid] });
@@ -4105,7 +4105,7 @@ const resolveSingleCommandTarget = (context) => {
 
         if (!username) {
           if (targetJid === normalizeJid(context.senderJid)) {
-            return musicResponse('Non hai collegato un account. Usa prima !setusr <nickname>.');
+            return musicResponse('Non hai collegato un account. Per usare i comandi di LastFM, devi prima creare un account nel sito ufficiale LastFM.com, collega il tuo provider di musica dal profilo e poi torna qui e usa > !setusr <nickname>.');
           }
           const label = await buildMentionLabel(targetJid, context);
           return musicResponse(`${label} non ha collegato un account Last.fm.`, { mentions: [targetJid] });
@@ -5930,14 +5930,9 @@ ${item.url}`);
           return wrap({ text: 'Ho avuto problemi a generare lo sticker. Assicurati che ffmpeg sia installato per i video.' });
         }
 
-        return wrap({
-          messages: [
-            {
-              sticker: stickerBuffer
-            }
-          ],
-          consumesText: true
-        });
+        return {
+          sticker: stickerBuffer
+        };
       }
     },
     {
