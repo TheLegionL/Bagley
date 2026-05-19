@@ -118,7 +118,22 @@ function toWhitelistEntry(rawEntry) {
 class PermissionService {
   constructor(ownerJids, whitelistEntries, moderatorEntries) {
     const jidList = Array.isArray(ownerJids) ? ownerJids : [ownerJids];
-    this.ownerJids = new Set(jidList.map((jid) => normalizeJid(jid)).filter(Boolean));
+    const rawOwnerJids = jidList
+      .map((jid) => resolveJidInput(jid).trim())
+      .filter(Boolean);
+
+    this.ownerJids = new Set();
+    this.ownerRawJids = new Set();
+
+    rawOwnerJids.forEach((jid) => {
+      const normalized = normalizeJid(jid);
+      if (normalized) {
+        this.ownerJids.add(normalized);
+        this.ownerRawJids.add(normalized);
+      }
+      this.ownerRawJids.add(jid);
+    });
+
     this.whitelist = new Map();
     (whitelistEntries || []).forEach((entry) => {
       const normalized = toWhitelistEntry(entry);
@@ -312,7 +327,13 @@ class PermissionService {
   }
 
   isOwner(jid) {
-    return this.ownerJids.has(normalizeJid(jid));
+    const normalized = normalizeJid(jid);
+    if (this.ownerJids.has(normalized)) {
+      return true;
+    }
+
+    const raw = resolveJidInput(jid).trim();
+    return raw ? this.ownerRawJids.has(raw) : false;
   }
 
   isWhitelisted(jid) {
