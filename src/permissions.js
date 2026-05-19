@@ -66,20 +66,27 @@ function normalizeJid(rawJid) {
     return '';
   }
 
-  if (input.endsWith('@g.us') || input.endsWith('@broadcast')) {
-    return input;
+  const normalizedInput = input.toLowerCase();
+  if (normalizedInput.endsWith('@g.us') || normalizedInput.endsWith('@broadcast')) {
+    return normalizedInput;
+  }
+
+  if (normalizedInput.endsWith('@lid')) {
+    const [local] = normalizedInput.split('@');
+    const digits = local.replace(/\D/g, '');
+    return digits ? `${digits}@s.whatsapp.net` : `${local}@s.whatsapp.net`;
   }
 
   try {
     const normalized = jidNormalizedUser(input);
     if (normalized) {
-      return stripDevice(normalized);
+      return stripDevice(normalized).toLowerCase();
     }
   } catch (error) {
     // fall back to manual normalization below
   }
 
-  const segments = input.split(':');
+  const segments = normalizedInput.split(':');
   let base = segments.shift();
 
   if (base.includes('@')) {
@@ -120,7 +127,8 @@ class PermissionService {
     const jidList = Array.isArray(ownerJids) ? ownerJids : [ownerJids];
     const rawOwnerJids = jidList
       .map((jid) => resolveJidInput(jid).trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map((jid) => jid.toLowerCase());
 
     this.ownerJids = new Set();
     this.ownerRawJids = new Set();
@@ -328,11 +336,11 @@ class PermissionService {
 
   isOwner(jid) {
     const normalized = normalizeJid(jid);
-    if (this.ownerJids.has(normalized)) {
+    if (normalized && this.ownerJids.has(normalized)) {
       return true;
     }
 
-    const raw = resolveJidInput(jid).trim();
+    const raw = resolveJidInput(jid).trim().toLowerCase();
     return raw ? this.ownerRawJids.has(raw) : false;
   }
 
