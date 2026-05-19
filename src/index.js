@@ -1065,6 +1065,14 @@ async function startBot(services) {
             } else if (commandResponse.text) {
               const { text: responseText, ...rest } = commandResponse;
               payloads.push({ text: responseText, ...rest });
+            } else {
+              // Verifica se è un payload diretto (sticker, image, video, audio, document, etc.)
+              const DIRECT_PAYLOAD_KEYS = ['sticker', 'image', 'video', 'audio', 'document', 'contact', 'location', 'template', 'buttons', 'interactive', 'list', 'product', 'poll', 'reactions'];
+              const hasDirectPayload = DIRECT_PAYLOAD_KEYS.some(key => commandResponse.hasOwnProperty(key) && commandResponse[key] !== undefined);
+              if (hasDirectPayload) {
+                const { replyToMessage, ...payload } = commandResponse;
+                payloads.push(payload);
+              }
             }
 
             if (payloads.length) {
@@ -1090,6 +1098,14 @@ async function startBot(services) {
           } else if (commandResponse.text) {
             const { text: responseText, ...rest } = commandResponse;
             payloads.push({ text: responseText, ...rest });
+          } else {
+            // Verifica se è un payload diretto (sticker, image, video, audio, document, etc.)
+            const DIRECT_PAYLOAD_KEYS = ['sticker', 'image', 'video', 'audio', 'document', 'contact', 'location', 'template', 'buttons', 'interactive', 'list', 'product', 'poll', 'reactions'];
+            const hasDirectPayload = DIRECT_PAYLOAD_KEYS.some(key => commandResponse.hasOwnProperty(key) && commandResponse[key] !== undefined);
+            if (hasDirectPayload) {
+              const { replyToMessage, ...payload } = commandResponse;
+              payloads.push(payload);
+            }
           }
 
           if (payloads.length) {
