@@ -1689,7 +1689,7 @@ const resolveSingleCommandTarget = (context) => {
 
   const BANK_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
 
-  const buildBankText = ({ title, lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+  const buildBankText = ({ title, lines = [], footer = '> 🤖 Powered By Bagley' } = {}) => {
     const payload = ['🏦 BagleyBank', BANK_CARD_DIVIDER];
     if (title) {
       payload.push(title);
@@ -1747,7 +1747,7 @@ const resolveSingleCommandTarget = (context) => {
 
   const buildMusicCard = (
     content,
-    { title = '🎧 Bagley FM', footer = '🤖 Powered By Bagley' } = {}
+    { title = '🎧 Bagley FM', footer = '> 🤖 Powered By Bagley' } = {}
   ) => {
     const payload = [title, MUSIC_CARD_DIVIDER];
     const lines = Array.isArray(content) ? content : [content];
@@ -1798,7 +1798,7 @@ const resolveSingleCommandTarget = (context) => {
 
   const GAME_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
 
-  const buildGameCard = ({ title = '🎮 Bagley Games', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+  const buildGameCard = ({ title = '🎮 Bagley Games', lines = [], footer = '> 🤖 Powered By Bagley' } = {}) => {
     const payload = [title, GAME_CARD_DIVIDER];
     for (const line of lines) {
       if (typeof line === 'string' && line.trim()) {
@@ -1824,7 +1824,7 @@ const resolveSingleCommandTarget = (context) => {
 
   const OSINT_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
 
-  const buildOsintCard = ({ title = '🕵️ Bagley OSINT', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+  const buildOsintCard = ({ title = '🕵️ Bagley OSINT', lines = [], footer = '> 🤖 Powered By Bagley' } = {}) => {
     const payload = [title, OSINT_CARD_DIVIDER];
     const list = Array.isArray(lines) ? lines : [lines];
     for (const line of list) {
@@ -1933,7 +1933,7 @@ const resolveSingleCommandTarget = (context) => {
 
   const PING_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
 
-  const buildPingCard = ({ title = '📡 Bagley Monitor', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+  const buildPingCard = ({ title = '📡 Bagley Monitor', lines = [], footer = '> 🤖 Powered By Bagley' } = {}) => {
     const payload = [title, PING_CARD_DIVIDER];
     for (const line of lines) {
       if (typeof line === 'string' && line.trim()) {
@@ -1973,7 +1973,7 @@ const resolveSingleCommandTarget = (context) => {
 
   const GREET_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
 
-  const buildGreetCard = ({ title = '👋 Sistema Greet', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+  const buildGreetCard = ({ title = '👋 Sistema Greet', lines = [], footer = '> 🤖 Powered By Bagley' } = {}) => {
     const payload = [title, GREET_CARD_DIVIDER];
     for (const line of lines) {
       if (typeof line === 'string' && line.trim()) {
@@ -1993,7 +1993,7 @@ const resolveSingleCommandTarget = (context) => {
 
   const MARKET_CARD_DIVIDER = '━━━━━━━━━━━━━━━━━━━━';
 
-  const buildMarketCard = ({ title = '📈 Bagley Market', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+  const buildMarketCard = ({ title = '📈 Bagley Market', lines = [], footer = '> 🤖 Powered By Bagley' } = {}) => {
     const payload = [title, MARKET_CARD_DIVIDER];
     for (const line of lines) {
       if (typeof line === 'string' && line.trim()) {
@@ -2011,7 +2011,7 @@ const resolveSingleCommandTarget = (context) => {
     text: buildMarketCard({ lines: Array.isArray(lines) ? lines : [lines], footer })
   });
 
-  const buildInventoryCard = ({ title = '🎒 Inventario', lines = [], footer = '🤖 Powered By Bagley' } = {}) => {
+  const buildInventoryCard = ({ title = '🎒 Inventario', lines = [], footer = '> 🤖 Powered By Bagley' } = {}) => {
     const payload = [title, MARKET_CARD_DIVIDER];
     for (const line of lines) {
       if (typeof line === 'string' && line.trim()) {
@@ -2945,31 +2945,17 @@ const resolveSingleCommandTarget = (context) => {
           ];
 
           return {
-            message: {
-              buttonsMessage: {
-                contentText: buildPingCard({
-                  title: '💻 System Stats',
-                  lines: detailLines,
-                  footer: 'ℹ️ Usa .ping per un check rapido'
-                }),
-                footerText: 'ℹ️ Usa .ping per un check rapido',
-                buttons: PING_QUICK_REPLY_BUTTONS,
-                headerType: 1
-              }
-            }
+            text: buildPingCard({
+              title: '💻 System Stats',
+              lines: detailLines,
+              footer: 'ℹ️ Usa .ping per un check rapido'
+            })
           };
         }
 
         const lines = ['🏓 Pong!', `- Latenza stimata: ${latency}ms`, `- Stato socket: ${status}`];
         return {
-          message: {
-            buttonsMessage: {
-              contentText: buildPingCard({ lines }),
-              footerText: 'ℹ️ Usa .ping per un check rapido',
-              buttons: PING_QUICK_REPLY_BUTTONS,
-              headerType: 1
-            }
-          }
+          text: buildPingCard({ lines })
         };
       }
     },
